@@ -7,9 +7,9 @@
   "is_private": "true",
   "enable_gpu": "true",
   "enable_tpu": "false",
-  "enable_internet": "true",
+  "enable_internet": "false",
   "machine_shape": "NvidiaTeslaT4",
-  "dataset_sources": [],
+  "dataset_sources": ["chinnakrit/dsde-midterm-offline-pkgs", "chinnakrit/dsde-midterm-data"],
   "competition_sources": ["2110531-dsde-2026-1"],
   "kernel_sources": [],
   "model_sources": []
