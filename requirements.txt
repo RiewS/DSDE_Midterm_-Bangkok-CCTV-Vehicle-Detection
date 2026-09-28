@@ -1,0 +1,14 @@
+# Python 3.12 — CUDA build of torch: pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu126
+torch==2.8.0
+torchvision==0.23.0
+ultralytics==8.4.163
+pycocotools
+pandas==2.3.3        # 3.0.x wheel is blocked by Windows Smart App Control on the dev machine
+numpy
+matplotlib
+seaborn
+opencv-python
+pillow
+tqdm
+kaggle>=1.8.0
+jupyter

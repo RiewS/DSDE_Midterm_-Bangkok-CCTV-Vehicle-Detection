@@ -1,0 +1,297 @@
+{
+  "student": {
+    "name": "<NAME SURNAME>",
+    "id": "<STUDENT ID>",
+    "kaggle": "<KAGGLE USERNAME>"
+  },
+  "links": {
+    "code": "<GitHub / Google Drive link>",
+    "weights": "<Google Drive link>"
+  },
+  "val_cams": [
+    "1066",
+    "1427",
+    "1437",
+    "244"
+  ],
+  "cleaning": {
+    "raw boxes": 27396,
+    "boxes on missing images": 0,
+    "boxes outside image (clipped)": 0,
+    "exact duplicates removed": 25,
+    "tiny boxes (< 2 px) removed": 15,
+    "near-duplicates removed (same class, IoU > 0.9)": 9,
+    "class conflicts kept (different class, IoU > 0.9)": 280,
+    "clean boxes": 27347,
+    "background images (no boxes)": 102
+  },
+  "split_table": {
+    "Car": [
+      12969,
+      4765,
+      "26.9%",
+      "64.87%",
+      "64.79%"
+    ],
+    "Motorcycle": [
+      4808,
+      1741,
+      "26.6%",
+      "24.05%",
+      "23.67%"
+    ],
+    "Bus": [
+      346,
+      133,
+      "27.8%",
+      "1.73%",
+      "1.81%"
+    ],
+    "Truck": [
+      1002,
+      352,
+      "26.0%",
+      "5.01%",
+      "4.79%"
+    ],
+    "Tuktuk": [
+      180,
+      85,
+      "32.1%",
+      "0.90%",
+      "1.16%"
+    ],
+    "Van": [
+      247,
+      107,
+      "30.2%",
+      "1.24%",
+      "1.45%"
+    ],
+    "Pickup": [
+      347,
+      148,
+      "29.9%",
+      "1.74%",
+      "2.01%"
+    ],
+    "Songthaew": [
+      93,
+      24,
+      "20.5%",
+      "0.47%",
+      "0.33%"
+    ]
+  },
+  "best": "yolo26s_960_tta",
+  "experiments": {
+    "yolo26s_640": {
+      "desc": "YOLO26s, imgsz 640, batch 8, RFS; 100 ep max, early-stopped at 60 (best ep 30)",
+      "imgsz": 640,
+      "epochs": 100,
+      "batch": 8,
+      "max_det": 100,
+      "val_map50": 0.4666,
+      "kaggle_public": null,
+      "val_ap": {
+        "Car": 0.8843,
+        "Motorcycle": 0.7984,
+        "Bus": 0.6245,
+        "Truck": 0.4535,
+        "Tuktuk": 0.4141,
+        "Van": 0.2486,
+        "Pickup": 0.2204,
+        "Songthaew": 0.0893
+      }
+    },
+    "yolo26s_640_tta": {
+      "desc": "same weights + test-time augmentation (flips + multi-scale)",
+      "imgsz": 640,
+      "epochs": 100,
+      "batch": 8,
+      "max_det": 100,
+      "val_map50": 0.4919,
+      "kaggle_public": null,
+      "val_ap": {
+        "Car": 0.8869,
+        "Motorcycle": 0.7956,
+        "Bus": 0.6784,
+        "Truck": 0.4988,
+        "Tuktuk": 0.445,
+        "Van": 0.2936,
+        "Pickup": 0.2653,
+        "Songthaew": 0.0713
+      }
+    },
+    "yolo26s_960": {
+      "desc": "YOLO26s, imgsz 960, batch 4, RFS; 40 ep (best ep 22)",
+      "imgsz": 960,
+      "epochs": 40,
+      "batch": 4,
+      "max_det": 100,
+      "val_map50": 0.4958,
+      "kaggle_public": null,
+      "val_ap": {
+        "Car": 0.8966,
+        "Motorcycle": 0.795,
+        "Bus": 0.6544,
+        "Truck": 0.551,
+        "Tuktuk": 0.4669,
+        "Van": 0.282,
+        "Pickup": 0.249,
+        "Songthaew": 0.0716
+      }
+    },
+    "yolo26s_960_tta": {
+      "desc": "yolo26s_960 weights + TTA",
+      "imgsz": 960,
+      "epochs": 40,
+      "batch": 4,
+      "max_det": 100,
+      "val_map50": 0.5247,
+      "kaggle_public": null,
+      "val_ap": {
+        "Car": 0.9014,
+        "Motorcycle": 0.8002,
+        "Bus": 0.699,
+        "Truck": 0.5881,
+        "Tuktuk": 0.448,
+        "Van": 0.3367,
+        "Pickup": 0.3153,
+        "Songthaew": 0.1091
+      }
+    },
+    "yolo26s_960_full_tta": {
+      "desc": "final: same settings trained on all 15 cameras (25 ep, last epoch) + TTA; val cams are inside training, so no unbiased val score",
+      "imgsz": 960,
+      "epochs": 25,
+      "batch": 4,
+      "max_det": 100,
+      "val_map50": null,
+      "kaggle_public": null
+    }
+  },
+  "final": {
+    "file": "submissions/yolo26s_960_full_tta.csv (fallback: submissions/yolo26s_960_tta.csv)",
+    "kaggle_public": null
+  },
+  "figs": {
+    "per_class": "yolo26s_960_tta_per_class.png",
+    "curves": "yolo26s_960_curves.png",
+    "confusion": "yolo26s_960_confusion_matrix_normalized.png",
+    "gt_pred": "yolo26s_960_gt_vs_pred.png",
+    "test": "yolo26s_960_test_pred.png"
+  },
+  "discussion": {
+    "5.1 Error analysis by class": [
+      "**Car (0.90) and Motorcycle (0.80)** are detected well: they are frequent and look distinctive.",
+      "**Van (0.34), Pickup (0.32) and Songthaew (0.11)** are the main weakness. The confusion matrix shows that 44% of Vans and 51% of Pickups are predicted as Car, and 33% of Songthaews as Truck. At 15-25 px these vehicles differ only by a few pixels (roof shape, open cargo bed, rear bench).",
+      "**Label noise** makes this harder: the crops in Chapter 2 contain SUVs labelled as Van and vans labelled as Truck, and 280 vehicles carry two boxes with different classes (mostly Car + Truck). One of the two boxes can never be matched by a single prediction, which caps the achievable AP.",
+      "**Songthaew generalises poorly** because 91 of its 117 training boxes come from one camera (1426), so the model learns that camera's appearance rather than the vehicle.",
+      "**Tuktuk** is often missed completely (32% predicted as background): tuktuks are small, partially covered by motorcycles and look like a motorcycle with a roof."
+    ],
+    "5.2 Error analysis by condition and camera": [
+      "Day vs night (960 + TTA): 0.537 vs 0.494. Headlight glare and motion blur reduce the visible shape.",
+      "Per validation camera: 0.52 (cam 244, 1427) to 0.69 (cam 1437). Accuracy depends strongly on the viewpoint, so the unseen test cameras are the biggest source of uncertainty.",
+      "Overfitting to the training cameras: validation mAP peaks early (epoch 30 at 640, epoch 22 at 960) and then slowly decreases while the training loss keeps going down. Early stopping on held-out cameras was therefore essential."
+    ],
+    "5.3 What helped": [
+      "Camera-held-out validation: gives an honest estimate for unseen cameras (a random split would mix near-identical frames of the same camera).",
+      "Higher input resolution (640 -> 960): +0.029 mAP, mainly Truck (+0.10) and Tuktuk (+0.05).",
+      "Test-time augmentation: +0.025 at 640 and +0.029 at 960; it helps the rare classes most (Van, Pickup, Bus).",
+      "Very low confidence threshold (0.001) so that the precision-recall curve is complete. Keeping 300 instead of 100 boxes per image changed the score by only +0.001."
+    ],
+    "5.4 How to improve": [
+      "Larger backbones (YOLO26m/l, RT-DETR) and imgsz 1280 on a bigger GPU (Colab / Kaggle); only a 4 GB GPU was available here.",
+      "A second-stage classifier (or a VLM) that re-classifies crops of the confusable classes Car / Van / Pickup / Truck / Songthaew at higher resolution, emitting the alternative classes with lower scores.",
+      "Ensembling several models / resolutions with Weighted Boxes Fusion.",
+      "Semi-supervised domain adaptation: pseudo-label the unlabelled test cameras with high-confidence predictions and fine-tune.",
+      "Copy-paste augmentation of rare vehicles into other cameras, and relabelling the noisy Van / Truck / duplicate boxes.",
+      "Cross-validation over several camera folds to choose hyper-parameters more reliably than a single 4-camera split."
+    ]
+  },
+  "conclusion": [
+    "A YOLO26s detector pretrained on COCO was fine-tuned to detect eight vehicle classes in low-resolution Bangkok CCTV images. The EDA showed that the test cameras never appear in training, the objects are tiny and the classes are strongly imbalanced; the pipeline was designed around these facts with a camera-held-out validation split, repeat-factor sampling of rare classes, upscaled training (imgsz 960) and test-time augmentation.",
+    "On four held-out cameras the model reaches mAP@50 = 0.525 (Car 0.90, Motorcycle 0.80, Bus 0.70), up from 0.467 for the 640 baseline. The final model is retrained on all 15 cameras with the same settings. The remaining errors come mostly from fine-grained confusion between Car, Van, Pickup, Truck and Songthaew and from viewpoint changes between cameras, which a second-stage classifier, larger models and domain adaptation could address.",
+    "The whole pipeline is reproducible from a single notebook with fixed seeds, pinned package versions and the submitted weights."
+  ],
+  "postproc": "max_det 300 instead of 100: +0.0006 (640) / +0.0011 (960, TTA) - negligible",
+  "eda_stats": {
+    "chi2_cam": 4823,
+    "v_cam": 0.159,
+    "p_night": "6.1e-33",
+    "v_night": 0.078,
+    "mad_same": 14.5,
+    "mad_cross": 53.6,
+    "mad_ratio": 3.7,
+    "skew_area": 7.05,
+    "kurt_area": 96.0,
+    "skew_log": 0.19
+  },
+  "outlier_table": [
+    [
+      "Car",
+      17762,
+      276,
+      5,
+      1.33,
+      452
+    ],
+    [
+      "Motorcycle",
+      6563,
+      119,
+      14,
+      2.56,
+      58
+    ],
+    [
+      "Bus",
+      482,
+      1272,
+      0,
+      1.8,
+      6
+    ],
+    [
+      "Truck",
+      1356,
+      670,
+      4,
+      1.78,
+      13
+    ],
+    [
+      "Tuktuk",
+      265,
+      420,
+      1,
+      1.93,
+      0
+    ],
+    [
+      "Van",
+      354,
+      990,
+      4,
+      1.6,
+      2
+    ],
+    [
+      "Pickup",
+      497,
+      840,
+      0,
+      1.42,
+      1
+    ],
+    [
+      "Songthaew",
+      117,
+      1054,
+      0,
+      1.54,
+      14
+    ]
+  ]
+}

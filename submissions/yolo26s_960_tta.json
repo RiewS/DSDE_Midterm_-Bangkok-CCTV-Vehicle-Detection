@@ -1,0 +1,32 @@
+{
+  "model": "yolo26s.pt",
+  "weights": "D:\\RIEWSPBOY\\CHULA\\CU ENG 2568\\2110531_DSDE_2026s1\\midterm\\weights\\yolo26s_960.pt",
+  "imgsz": 960,
+  "epochs": 100,
+  "batch": 8,
+  "seed": 42,
+  "full_train": false,
+  "val_cams": [
+    "1066",
+    "1427",
+    "1437",
+    "244"
+  ],
+  "val_map50": 0.5247,
+  "rfs": true,
+  "val_ap": {
+    "Car": 0.9014,
+    "Motorcycle": 0.8002,
+    "Bus": 0.699,
+    "Truck": 0.5881,
+    "Tuktuk": 0.448,
+    "Van": 0.3367,
+    "Pickup": 0.3153,
+    "Songthaew": 0.1091
+  },
+  "rfs_t": 0.15,
+  "conf": 0.001,
+  "max_det": 100,
+  "tta": true,
+  "ultralytics": "8.4.163"
+}
