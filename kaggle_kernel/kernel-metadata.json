@@ -1,0 +1,16 @@
+{
+  "id": "chinnakrit/dsde-midterm-cv-yolo26m",
+  "title": "dsde-midterm-cv-yolo26m",
+  "code_file": "cv_kfold_kaggle.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [],
+  "competition_sources": ["2110531-dsde-2026-1"],
+  "kernel_sources": [],
+  "model_sources": []
+}
