@@ -2,7 +2,7 @@
   "model": "yolo26s.pt",
   "weights": "D:\\RIEWSPBOY\\CHULA\\CU ENG 2568\\2110531_DSDE_2026s1\\midterm\\weights\\yolo26s_960.pt",
   "imgsz": 960,
-  "epochs": 100,
+  "epochs": 40,
   "batch": 8,
   "seed": 42,
   "full_train": false,
@@ -28,5 +28,6 @@
   "conf": 0.001,
   "max_det": 100,
   "tta": true,
-  "ultralytics": "8.4.163"
+  "ultralytics": "8.4.163",
+  "note": "predictions regenerated with SKIP_TRAIN=1 from the saved weights; image_id = test file name"
 }

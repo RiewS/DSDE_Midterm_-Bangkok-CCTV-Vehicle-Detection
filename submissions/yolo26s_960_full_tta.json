@@ -1,9 +1,9 @@
 {
   "model": "yolo26s.pt",
-  "weights": "D:\\RIEWSPBOY\\CHULA\\CU ENG 2568\\2110531_DSDE_2026s1\\midterm\\runs\\yolo26s_960_full\\weights\\last.pt",
+  "weights": "D:\\RIEWSPBOY\\CHULA\\CU ENG 2568\\2110531_DSDE_2026s1\\midterm\\weights\\yolo26s_960_full.pt",
   "imgsz": 960,
   "epochs": 25,
-  "batch": 4,
+  "batch": 8,
   "seed": 42,
   "full_train": true,
   "val_cams": [
@@ -28,5 +28,7 @@
   "conf": 0.001,
   "max_det": 100,
   "tta": true,
-  "ultralytics": "8.4.163"
+  "ultralytics": "8.4.163",
+  "note": "predictions regenerated with SKIP_TRAIN=1 from the saved weights; image_id = test file name",
+  "val_map50_note": "val cams are part of training -> val score is not meaningful"
 }

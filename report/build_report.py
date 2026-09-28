@@ -249,12 +249,14 @@ P('The extremes were inspected visually before deciding what to do. The largest 
 FIGURE('eda_extreme_boxes.png', 'Most extreme boxes: largest area (top), tallest (middle), widest (bottom)')
 
 H('2.4 Visual inspection', 2)
-FIGURE('eda_train_samples.png', 'One daytime frame per training camera with ground-truth boxes')
+FIGURE('eda_train_samples.png', 'Preview: one daytime frame per training camera with ground-truth boxes')
+FIGURE('eda_train_night_samples.png', 'Preview: night frames of training cameras. Training uses all frames (day and night); only this preview is split by time')
 FIGURE('eda_test_samples.png', 'Test cameras (day and night); these viewpoints never appear in training')
 FIGURE('eda_crops.png', 'Examples of rare classes (crops). Van / Pickup / Truck are hard to separate even for a human', width=13)
-P('**Submission ids differ from file names.** sample_submission.csv uses long ids '
-  '(dataset_<cam>_annotated_coco1.0_<cam>_<Thai location name>_<date>_<time>.jpg); they were mapped to test files '
-  'by (camera, timestamp). 16 test images are not listed in sample_submission (not scored).')
+P('**sample_submission.csv uses different ids from the test file names.** It lists 997 long ids '
+  '(dataset_<cam>_annotated_coco1.0_<cam>_<Thai location name>_<date>_<time>.jpg), while the 1,013 test images are '
+  'named <cam>_<date>_<time>.jpg. The Kaggle solution uses the file names (Section 4.3), so predictions are written '
+  'for all 1,013 test images with the file name as image_id.')
 
 H('2.5 Data cleaning', 2)
 P('Cleaning is applied to the **training labels only**. Validation is always scored against the raw labels, '
@@ -321,7 +323,7 @@ TABLE(['Hyper-parameter', 'Value'], [
     ['Batch size', f"{best['batch']} (limited by 4 GB VRAM)"],
     ['Optimizer', 'Ultralytics "auto" -> AdamW (lr 0.000833, momentum 0.9, weight decay 0.0005), cosine LR schedule, warm-up 3 epochs'],
     ['Augmentation', 'Mosaic (off for the last 10 epochs), random scale 0.5, translate 0.1, horizontal flip 0.5, HSV jitter (h 0.015, s 0.7, v 0.4), random erasing 0.4'],
-    ['Class balance', 'Repeat-factor sampling (Section 2.4)'],
+    ['Class balance', 'Repeat-factor sampling (Section 2.6)'],
     ['Seed', '42, deterministic=True'],
     ['Hardware', 'NVIDIA GeForce RTX 3050 Ti Laptop GPU (4 GB), 32 GB RAM, Windows 11'],
 ], 'Training configuration', widths=[4, 12.5])
@@ -329,8 +331,8 @@ H('3.3 Inference and post-processing', 2)
 B(['Confidence threshold 0.001: low-confidence boxes only extend the precision-recall curve and never '
    'reduce AP, so a very low threshold gives the highest mAP.',
    f"max_det = {best.get('max_det', 100)} boxes per image (pycocotools keeps at most 100 per image and class).",
-   'Boxes are written in absolute pixel coordinates; degenerate boxes are removed; ids are mapped back to the '
-   'long sample_submission ids; every scored image appears at least once.'])
+   'Boxes are written in absolute pixel coordinates (x1, y1, x2, y2); degenerate boxes are removed; image_id is the '
+   'test file name; images without detections get no row and no dummy boxes are added (Data-page rule).'])
 H('3.4 Evaluation', 2)
 P('The notebook re-implements the Kaggle metric with pycocotools (COCOeval, IoU = 0.50, area = all, maxDets = 100) '
   'on the held-out cameras, using the raw labels. This is the number used to choose models. Ultralytics\' own '
@@ -353,6 +355,12 @@ FIGURE(RES['figs']['confusion'], 'Normalised confusion matrix on the validation 
 FIGURE(RES['figs']['gt_pred'], 'Ground truth (left) vs prediction with confidence > 0.3 (right) on validation cameras')
 FIGURE(RES['figs']['test'], 'Predictions on the unseen test cameras')
 H('4.3 Kaggle submission', 2)
+TABLE(['Submitted file', 'image_id format', 'Public mAP@50'], RES['kaggle_history'], 'Kaggle submission history', widths=[5.2, 7.5, 3])
+P('The first two submissions scored 0.000 although the model was the same: they used the long ids copied from '
+  'sample_submission.csv, which do not exist in the solution file. Re-submitting the same predictions with the test '
+  'file names gave 0.516, close to the validation score of the same model (0.525), which confirms that the '
+  'camera-held-out validation is a reliable estimate of the leaderboard. Training on all 15 cameras raised the '
+  'public score to **0.548**.')
 P(f"Final submission file: {final.get('file', '-')}. Public leaderboard mAP@50: {fmt(final.get('kaggle_public'))}.")
 P('Model weights: weights/yolo26s_960_full.pt (final, all cameras) and weights/yolo26s_960.pt (trained without the 4 validation cameras).')
 P('[Insert screenshot of the Kaggle submission page / leaderboard here]', italic=True)

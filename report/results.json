@@ -1,8 +1,8 @@
 {
   "student": {
-    "name": "<NAME SURNAME>",
-    "id": "<STUDENT ID>",
-    "kaggle": "<KAGGLE USERNAME>"
+    "name": "Chinnakrit Ongsritrakul",
+    "id": "6870061721",
+    "kaggle": "6870061721_Chinnakrit (team name)"
   },
   "links": {
     "code": "<GitHub / Google Drive link>",
@@ -149,7 +149,7 @@
       "batch": 4,
       "max_det": 100,
       "val_map50": 0.5247,
-      "kaggle_public": null,
+      "kaggle_public": 0.51648,
       "val_ap": {
         "Car": 0.9014,
         "Motorcycle": 0.8002,
@@ -168,12 +168,12 @@
       "batch": 4,
       "max_det": 100,
       "val_map50": null,
-      "kaggle_public": null
+      "kaggle_public": 0.54814
     }
   },
   "final": {
-    "file": "submissions/yolo26s_960_full_tta.csv (fallback: submissions/yolo26s_960_tta.csv)",
-    "kaggle_public": null
+    "file": "submissions/yolo26s_960_full_tta.csv",
+    "kaggle_public": 0.54814
   },
   "figs": {
     "per_class": "yolo26s_960_tta_per_class.png",
@@ -193,13 +193,15 @@
     "5.2 Error analysis by condition and camera": [
       "Day vs night (960 + TTA): 0.537 vs 0.494. Headlight glare and motion blur reduce the visible shape.",
       "Per validation camera: 0.52 (cam 244, 1427) to 0.69 (cam 1437). Accuracy depends strongly on the viewpoint, so the unseen test cameras are the biggest source of uncertainty.",
-      "Overfitting to the training cameras: validation mAP peaks early (epoch 30 at 640, epoch 22 at 960) and then slowly decreases while the training loss keeps going down. Early stopping on held-out cameras was therefore essential."
+      "Overfitting to the training cameras: validation mAP peaks early (epoch 30 at 640, epoch 22 at 960) and then slowly decreases while the training loss keeps going down. Early stopping on held-out cameras was therefore essential.",
+      "Validation vs leaderboard: the same model scored 0.525 on the held-out cameras and 0.516 on the public test set, so the camera-held-out split predicts the leaderboard well; a random split would have been over-optimistic."
     ],
     "5.3 What helped": [
       "Camera-held-out validation: gives an honest estimate for unseen cameras (a random split would mix near-identical frames of the same camera).",
       "Higher input resolution (640 -> 960): +0.029 mAP, mainly Truck (+0.10) and Tuktuk (+0.05).",
       "Test-time augmentation: +0.025 at 640 and +0.029 at 960; it helps the rare classes most (Van, Pickup, Bus).",
-      "Very low confidence threshold (0.001) so that the precision-recall curve is complete. Keeping 300 instead of 100 boxes per image changed the score by only +0.001."
+      "Very low confidence threshold (0.001) so that the precision-recall curve is complete. Keeping 300 instead of 100 boxes per image changed the score by only +0.001.",
+      "Training the final model on all 15 cameras: public 0.516 -> 0.548 (more viewpoints to generalise from)."
     ],
     "5.4 How to improve": [
       "Larger backbones (YOLO26m/l, RT-DETR) and imgsz 1280 on a bigger GPU (Colab / Kaggle); only a 4 GB GPU was available here.",
@@ -212,7 +214,7 @@
   },
   "conclusion": [
     "A YOLO26s detector pretrained on COCO was fine-tuned to detect eight vehicle classes in low-resolution Bangkok CCTV images. The EDA showed that the test cameras never appear in training, the objects are tiny and the classes are strongly imbalanced; the pipeline was designed around these facts with a camera-held-out validation split, repeat-factor sampling of rare classes, upscaled training (imgsz 960) and test-time augmentation.",
-    "On four held-out cameras the model reaches mAP@50 = 0.525 (Car 0.90, Motorcycle 0.80, Bus 0.70), up from 0.467 for the 640 baseline. The final model is retrained on all 15 cameras with the same settings. The remaining errors come mostly from fine-grained confusion between Car, Van, Pickup, Truck and Songthaew and from viewpoint changes between cameras, which a second-stage classifier, larger models and domain adaptation could address.",
+    "On four held-out cameras the model reaches mAP@50 = 0.525 (Car 0.90, Motorcycle 0.80, Bus 0.70), up from 0.467 for the 640 baseline. The final model, retrained on all 15 cameras with the same settings, scores 0.548 on the public leaderboard. The remaining errors come mostly from fine-grained confusion between Car, Van, Pickup, Truck and Songthaew and from viewpoint changes between cameras, which a second-stage classifier, larger models and domain adaptation could address.",
     "The whole pipeline is reproducible from a single notebook with fixed seeds, pinned package versions and the submitted weights."
   ],
   "postproc": "max_det 300 instead of 100: +0.0006 (640) / +0.0011 (960, TTA) - negligible",
@@ -292,6 +294,28 @@
       0,
       1.54,
       14
+    ]
+  ],
+  "kaggle_history": [
+    [
+      "yolo26s_960_full_tta.csv",
+      "long ids from sample_submission.csv",
+      "0.00000"
+    ],
+    [
+      "yolo26s_960_tta.csv",
+      "long ids from sample_submission.csv",
+      "0.00000"
+    ],
+    [
+      "yolo26s_960_tta.csv (re-submitted)",
+      "test file name, e.g. 1068_20260825_060110.jpg",
+      "0.51648"
+    ],
+    [
+      "yolo26s_960_full_tta.csv (final)",
+      "test file name, all 1,013 images",
+      "0.54814"
     ]
   ]
 }

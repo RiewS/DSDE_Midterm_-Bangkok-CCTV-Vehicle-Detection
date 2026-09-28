@@ -31,13 +31,16 @@ SKIP_TRAIN=1 WEIGHTS=weights/yolo26s_960_full.pt IMGSZ=960 TTA=1 RUN_NAME=repro 
 
 ## Results (validation = 4 held-out cameras 1066, 1427, 1437, 244; pycocotools mAP@50)
 
-| Run | Val mAP@50 |
-|---|---|
-| yolo26s, 640 | 0.4666 |
-| yolo26s, 640 + TTA | 0.4919 |
-| yolo26s, 960 | 0.4958 |
-| yolo26s, 960 + TTA | **0.5247** |
-| yolo26s, 960, all 15 cams, 25 ep + TTA (final) | – (no held-out val) |
+| Run | Val mAP@50 | Kaggle public |
+|---|---|---|
+| yolo26s, 640 | 0.4666 | – |
+| yolo26s, 640 + TTA | 0.4919 | – |
+| yolo26s, 960 | 0.4958 | – |
+| yolo26s, 960 + TTA | 0.5247 | 0.51648 |
+| **yolo26s, 960, all 15 cams, 25 ep + TTA (final)** | – (no held-out val) | **0.54814** |
+
+**Submission `image_id` must be the test file name** (`1068_20260825_060110.jpg`), not the long id in
+`sample_submission.csv` — the long ids scored 0.000.
 
 `experiments/postproc_eval.py` compares MAX_DET 100/300 and TTA on the val cameras.
 
