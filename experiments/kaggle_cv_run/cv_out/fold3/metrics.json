@@ -1,0 +1,25 @@
+{
+  "fold": 3,
+  "val_cams": [
+    "1407",
+    "1437",
+    "180"
+  ],
+  "val_map50": 0.7089,
+  "val_ap": {
+    "Car": 0.8947,
+    "Motorcycle": 0.8483,
+    "Bus": 0.7917,
+    "Truck": 0.5605,
+    "Tuktuk": 0.8357,
+    "Van": 0.5005,
+    "Pickup": 0.5307,
+    "Songthaew": null
+  },
+  "hours": 1.85,
+  "model": "yolo26m.pt",
+  "imgsz": 960,
+  "epochs": 30,
+  "tta": true,
+  "gpus": 2
+}

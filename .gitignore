@@ -3,5 +3,5 @@ runs/
 *.pt
 *.cache
 smoke_run.ipynb
-cv_out/
+/cv_out/
 package/
