@@ -169,9 +169,10 @@ B(['explore and clean the data, and build a validation scheme that reflects the 
    'fine-tune a modern pretrained detector (YOLO26 from the Ultralytics framework) and evaluate it with the '
    'same metric as Kaggle;',
    'analyse the errors and describe how the model could be improved.'])
-P('All code is in a single Jupyter notebook (vehicle_detection.ipynb) that runs end-to-end: EDA, cleaning, '
-  'split, training, evaluation, visualisation and submission. No generative-AI / VLM API was used for '
-  'prediction, so there is no API cost; training ran on a local laptop GPU (NVIDIA RTX 3050 Ti, 4 GB).')
+P('The code is in two Jupyter notebooks: vehicle_detection.ipynb (EDA, cleaning, split, YOLO26s experiments, '
+  'evaluation, visualisation, submission; local GPU) and cv_kfold_kaggle.ipynb (final YOLO26m camera 5-fold '
+  'cross-validation and ensemble; Kaggle GPU). No generative-AI / VLM API was used, so there is no API cost. '
+  'The final submission reaches **0.605 mAP@50** on the public leaderboard.')
 
 # ---------------------------------------------------------------- 2 data
 H('Chapter 2: Data Preparation')
@@ -294,75 +295,114 @@ TABLE(['Finding', 'Decision'], [
 ], 'EDA findings and the resulting decisions', widths=[9, 7.5])
 
 # ---------------------------------------------------------------- 3 model
+CVR = json.loads((ROOT / 'report' / 'cv_results.json').read_text(encoding='utf-8'))
 H('Chapter 3: Model')
 H('3.1 Choice of model', 2)
 P('The course slides (Week 5, Object Detection) describe the change from two-stage CNNs (Faster R-CNN) to '
   'one-stage YOLO detectors, transformer detectors (DETR / RT-DETR) and, most recently, end-to-end NMS-free '
   'YOLO26. The course example notebook fine-tunes YOLOv8 with Ultralytics. This work uses the newest model in '
-  'that family, **YOLO26**, fine-tuned from COCO-pretrained weights. YOLO11 and RT-DETR can be selected with a '
-  'single config line for comparison.')
-TABLE(['Property', 'YOLO26s (used)'], [
-    ['Framework', 'Ultralytics 8.4.163, PyTorch 2.8.0 + CUDA 12.6'],
-    ['Parameters / FLOPs', '9.95 M parameters, 22.8 GFLOPs at 640 (8-class head)'],
-    ['Pretraining', 'COCO 2017 detection (80 classes, ~118k images)'],
-    ['Backbone', 'CSP-style CNN with C3k2 blocks, SPPF (spatial pyramid pooling) and C2PSA (attention) block'],
-    ['Neck', 'PAN/FPN feature pyramid, fuses strides 8 / 16 / 32 (important for small vehicles)'],
-    ['Head', 'Anchor-free, end-to-end (one-to-one) head: no NMS at inference; no DFL'],
-    ['Transfer', "4 of 8 class rows of the head (car, motorcycle, bus, truck) were initialised from the matching COCO classes"],
-], 'YOLO26s summary', widths=[4, 12.5])
+  'that family, **YOLO26**, fine-tuned from COCO-pretrained weights. Two sizes were used: **YOLO26s** for the '
+  'experiments on the local 4 GB GPU, and **YOLO26m** for the final model, trained on Kaggle GPUs with camera '
+  '5-fold cross-validation and a 5-model ensemble.')
+TABLE(['Property', 'YOLO26s (experiments)', 'YOLO26m (final)'], [
+    ['Framework', 'Ultralytics 8.4.163, PyTorch 2.8.0', 'Ultralytics 8.4.163, PyTorch (Kaggle image)'],
+    ['Parameters', '9.95 M', '21.8 M'],
+    ['FLOPs', '22.8 G at 640', '75.0 G at 640 / 169.5 G at 960'],
+    ['Pretraining', 'COCO 2017 detection (80 classes, ~118k images)', 'same'],
+    ['Backbone', 'CSP-style CNN with C3k2 blocks, SPPF and C2PSA (attention) block', 'same design, wider / deeper'],
+    ['Neck', 'PAN/FPN feature pyramid, strides 8 / 16 / 32 (small vehicles)', 'same'],
+    ['Head', 'Anchor-free, end-to-end (one-to-one) head: no NMS, no DFL', 'same'],
+    ['Transfer', 'head rows of car, motorcycle, bus, truck initialised from the COCO classes', 'same'],
+], 'YOLO26 models used', widths=[2.8, 7, 6.7])
 P('YOLO is a one-stage detector: a single CNN pass predicts, for every location of three feature maps, a box '
   'and class scores. YOLO26 trains with a one-to-one assignment so each object gets a single prediction, which '
   'removes the non-maximum-suppression step, and it drops the Distribution Focal Loss. According to the '
   'Ultralytics documentation it also uses progressive loss balancing (ProgLoss) and small-target-aware label '
   'assignment (STAL), which suits this dataset because most vehicles are tiny.')
+P('No generative-AI / VLM API was used, so there is no API cost. Compute: the YOLO26s runs used a local laptop GPU; '
+  f"the YOLO26m cross-validation used the free Kaggle GPU quota (2 x NVIDIA T4, {sum(f['hours'] for f in CVR['folds']):.1f} GPU-session hours "
+  'for the 5 folds, including prediction).')
 
 H('3.2 Training setup', 2)
-TABLE(['Hyper-parameter', 'Value'], [
-    ['Input size', f"{best['imgsz']} (images are upscaled from 352 x 288 with letterbox)"],
-    ['Epochs / early stopping', f"{best['epochs']} max, patience 30; the best-val-mAP checkpoint is kept"],
-    ['Batch size', f"{best['batch']} (limited by 4 GB VRAM)"],
-    ['Optimizer', 'Ultralytics "auto" -> AdamW (lr 0.000833, momentum 0.9, weight decay 0.0005), cosine LR schedule, warm-up 3 epochs'],
-    ['Augmentation', 'Mosaic (off for the last 10 epochs), random scale 0.5, translate 0.1, horizontal flip 0.5, HSV jitter (h 0.015, s 0.7, v 0.4), random erasing 0.4'],
-    ['Class balance', 'Repeat-factor sampling (Section 2.6)'],
-    ['Seed', '42, deterministic=True'],
-    ['Hardware', 'NVIDIA GeForce RTX 3050 Ti Laptop GPU (4 GB), 32 GB RAM, Windows 11'],
-], 'Training configuration', widths=[4, 12.5])
-H('3.3 Inference and post-processing', 2)
+TABLE(['Hyper-parameter', 'YOLO26s (experiments)', 'YOLO26m 5-fold (final)'], [
+    ['Input size', '640 and 960 (upscaled from 352 x 288, letterbox)', '960'],
+    ['Epochs / early stopping', '100 (640) / 40 (960), patience 30, best-val checkpoint', '30 per fold, patience 10, best-val checkpoint of each fold'],
+    ['Batch size', '8 (640) / 4 (960), 4 GB VRAM', '16 (8 per GPU, 2 GPUs, DDP)'],
+    ['Validation', '4 held-out cameras (1066, 1427, 1437, 244)', 'StratifiedGroupKFold by camera: 5 folds x 3 cameras'],
+    ['Optimizer', 'Ultralytics "auto" -> AdamW (lr 0.000833, momentum 0.9, wd 0.0005), cosine LR, warm-up 3 epochs', 'same'],
+    ['Augmentation', 'Mosaic (off for the last 10 epochs), scale 0.5, translate 0.1, flip 0.5, HSV (0.015, 0.7, 0.4), random erasing 0.4', 'same'],
+    ['Class balance', 'Repeat-factor sampling (Section 2.6)', 'same'],
+    ['Seed', '42, deterministic=True', 'same'],
+    ['Hardware', 'RTX 3050 Ti Laptop GPU (4 GB), 32 GB RAM', 'Kaggle Notebook, 2 x NVIDIA T4 (16 GB each)'],
+], 'Training configuration', widths=[3, 6.8, 6.7])
+P('**Camera K-fold cross-validation.** The single 4-camera split of Section 2.6 wastes 4 cameras for training and '
+  'gives a noisy score. For the final model the 15 training cameras were split with scikit-learn '
+  'StratifiedGroupKFold (group = camera, stratified on the rarest class of each image) into 5 folds of 3 cameras. '
+  'Each fold model is trained on 12 cameras and early-stopped on its own 3 unseen cameras, so every camera is '
+  'used for validation exactly once (out-of-fold score) and for training in 4 of the 5 models. The folds are '
+  'fixed in the notebook because a different scikit-learn version produces a different assignment.')
+H('3.3 Inference, ensemble and post-processing', 2)
 B(['Confidence threshold 0.001: low-confidence boxes only extend the precision-recall curve and never '
    'reduce AP, so a very low threshold gives the highest mAP.',
-   f"max_det = {best.get('max_det', 100)} boxes per image (pycocotools keeps at most 100 per image and class).",
-   'Boxes are written in absolute pixel coordinates (x1, y1, x2, y2); degenerate boxes are removed; image_id is the '
-   'test file name; images without detections get no row and no dummy boxes are added (Data-page rule).'])
+   'Test-time augmentation (flips + scales) for every model.',
+   '**Weighted Boxes Fusion (WBF)** of the 5 fold models: boxes of the same class from different models that overlap '
+   'with IoU > 0.55 are merged into one box whose coordinates are the confidence-weighted average; the score is '
+   'averaged over the 5 models, so a box found by only one model gets a low score. Up to 300 boxes per image are kept '
+   '(pycocotools uses at most 100 per image and class).',
+   'Boxes are written in absolute pixel coordinates (x1, y1, x2, y2); image_id is the test file name; images without '
+   'detections get no row and no dummy boxes are added (Data-page rule).'])
 H('3.4 Evaluation', 2)
-P('The notebook re-implements the Kaggle metric with pycocotools (COCOeval, IoU = 0.50, area = all, maxDets = 100) '
-  'on the held-out cameras, using the raw labels. This is the number used to choose models. Ultralytics\' own '
-  'mAP50 is a bit higher because it uses the cleaned labels.')
+P('Both notebooks re-implement the Kaggle metric with pycocotools (COCOeval, IoU = 0.50, area = all, maxDets = 100) '
+  'on held-out cameras, using the raw labels. Ultralytics\' own mAP50 is a bit higher because it uses the cleaned labels.')
 
 # ---------------------------------------------------------------- 4 results
 H('Chapter 4: Results')
-H('4.1 Experiments (validation = held-out cameras)', 2)
-rows = []
-for name, e in RES['experiments'].items():
-    rows.append([name, e['desc'], fmt(e.get('val_map50')), fmt(e.get('kaggle_public'))])
-TABLE(['Run', 'Description', 'Val mAP@50', 'Kaggle public'], rows, 'Experiment summary',
-      widths=[3.6, 8, 2.4, 2.4], bold_rows=[list(RES['experiments']).index(RES['best'])])
-H('4.2 Per-class AP of the best model', 2)
-TABLE(['Class'] + CLASSES, [['AP@50'] + [f"{best['val_ap'][c]:.3f}" for c in CLASSES]],
-      f"Per-class AP@50 on validation cameras ({RES['best']})")
-FIGURE(RES['figs']['per_class'], 'Per-class AP@50 (validation)', width=13)
-FIGURE(RES['figs']['curves'], 'Training curves (losses and validation mAP)')
-FIGURE(RES['figs']['confusion'], 'Normalised confusion matrix on the validation cameras', width=13)
-FIGURE(RES['figs']['gt_pred'], 'Ground truth (left) vs prediction with confidence > 0.3 (right) on validation cameras')
-FIGURE(RES['figs']['test'], 'Predictions on the unseen test cameras')
-H('4.3 Kaggle submission', 2)
-TABLE(['Submitted file', 'image_id format', 'Public mAP@50'], RES['kaggle_history'], 'Kaggle submission history', widths=[5.2, 7.5, 3])
+H('4.1 Experiments with YOLO26s (validation = 4 held-out cameras)', 2)
+rows = [[name, e['desc'], fmt(e.get('val_map50')), fmt(e.get('kaggle_public'))]
+        for name, e in RES['experiments'].items() if not name.startswith('yolo26m')]
+TABLE(['Run', 'Description', 'Val mAP@50', 'Kaggle public'], rows, 'YOLO26s experiments', widths=[3.6, 8, 2.4, 2.4])
+P('Higher resolution (640 -> 960) and TTA each add about +0.03. The YOLO26s results below are for the best '
+  'single-split model (960 + TTA).')
+e = RES['experiments']['yolo26s_960_tta']
+TABLE(['Class'] + CLASSES, [['AP@50'] + [f"{e['val_ap'][c]:.3f}" for c in CLASSES]], 'Per-class AP@50, YOLO26s 960 + TTA, 4 validation cameras')
+FIGURE(RES['figs']['curves'], 'YOLO26s 960: training curves (losses and validation mAP)')
+FIGURE(RES['figs']['confusion'], 'YOLO26s 960: normalised confusion matrix on the validation cameras', width=13)
+FIGURE(RES['figs']['gt_pred'], 'YOLO26s 960: ground truth (left) vs prediction with confidence > 0.3 (right)')
+
+H('4.2 Final model: YOLO26m, camera 5-fold cross-validation', 2)
+TABLE(['Fold', 'Validation cameras', 'Val mAP@50', 'Epochs run', 'Best epoch', 'Hours'],
+      [[f['fold'], ', '.join(f['val_cams']), f"{f['val_map50']:.4f}", f['epochs_run'], f['best_epoch'], f['hours']] for f in CVR['folds']]
+      + [['OOF', 'all 15 cameras (2,991 images)', f"{CVR['oof_map50']:.4f}", '', '', f"{sum(f['hours'] for f in CVR['folds']):.1f}"]],
+      'YOLO26m 960 + TTA: per-fold and out-of-fold (OOF) validation mAP@50', widths=[1.3, 4.6, 2.3, 2.2, 2.2, 1.6],
+      bold_rows=[len(CVR['folds'])])
+FIGURE('cv_fold_curves.png', 'YOLO26m: validation mAP50 per epoch for each fold')
+TABLE(['Class', 'YOLO26s (4 cams)', 'YOLO26m CV (same 4 cams)', 'YOLO26m CV (15 cams)'],
+      [[c, f"{CVR['old4_s_ap'][c]:.3f}", f"{CVR['old4_m_ap'][c]:.3f}", f"{CVR['oof_ap'][c]:.3f}"] for c in CLASSES]
+      + [['mAP@50', f"{CVR['old4_s']:.3f}", f"{CVR['old4_m']:.3f}", f"{CVR['oof_map50']:.3f}"]],
+      'Per-class AP@50 on cameras that were not used for training', widths=[3, 4, 4.5, 4.5], bold_rows=[8])
+FIGURE('cv_per_class.png', 'Per-class AP@50: YOLO26s vs YOLO26m on unseen cameras')
+P(f"On the same four cameras YOLO26m is better for 6 of 8 classes (e.g. Van {CVR['old4_s_ap']['Van']:.2f} -> "
+  f"{CVR['old4_m_ap']['Van']:.2f}, Car {CVR['old4_s_ap']['Car']:.2f} -> {CVR['old4_m_ap']['Car']:.2f}). "
+  f"The OOF score over all 15 cameras ({CVR['oof_map50']:.3f}) is lower mainly because of Songthaew "
+  f"(AP {CVR['oof_ap']['Songthaew']:.3f}): 91 of its 117 boxes come from camera 1426, so the fold that validates on 1426 "
+  'has almost no Songthaew to learn from (see Chapter 5). In the test ensemble, 4 of the 5 models have seen camera 1426.')
+FIGURE('cv_fold1_confusion.png', 'YOLO26m fold 1: normalised confusion matrix on its validation cameras (1066, 182, 222)', width=13)
+FIGURE('cv_ensemble_test_pred.png', 'WBF ensemble predictions (confidence > 0.3) on the unseen test cameras')
+
+H('4.3 Kaggle submissions', 2)
+TABLE(['Submitted file', 'Model / image_id format', 'Public mAP@50'], RES['kaggle_history'], 'Kaggle submission history', widths=[5.4, 7.6, 2.7],
+      bold_rows=[len(RES['kaggle_history']) - 1])
 P('The first two submissions scored 0.000 although the model was the same: they used the long ids copied from '
   'sample_submission.csv, which do not exist in the solution file. Re-submitting the same predictions with the test '
-  'file names gave 0.516, close to the validation score of the same model (0.525), which confirms that the '
-  'camera-held-out validation is a reliable estimate of the leaderboard. Training on all 15 cameras raised the '
-  'public score to **0.548**.')
+  'file names gave 0.516, close to the validation score of the same model (0.525), which confirms that '
+  'camera-held-out validation is a reliable estimate of the leaderboard. Training YOLO26s on all 15 cameras gave '
+  '0.548, and the **YOLO26m 5-fold WBF ensemble gave 0.605**.')
 P(f"Final submission file: {final.get('file', '-')}. Public leaderboard mAP@50: {fmt(final.get('kaggle_public'))}.")
-P('Model weights: weights/yolo26s_960_full.pt (final, all cameras) and weights/yolo26s_960.pt (trained without the 4 validation cameras).')
+P('**Reproducibility check.** Re-running cv_kfold_kaggle.ipynb locally (RTX 3050 Ti) with the submitted fold weights '
+  'reproduced every fold score within 0.0002 of the Kaggle run (e.g. fold 1: 0.5198 on Kaggle vs 0.5200 locally) and '
+  'the ensemble file differs only by floating-point noise (6,948 vs 6,949 boxes with confidence > 0.3).')
+P('Model weights: weights/yolo26m_960_cv_fold0.pt ... fold4.pt (final ensemble); weights/yolo26s_960_full.pt and '
+  'yolo26s_960.pt (YOLO26s experiments).')
 P('[Insert screenshot of the Kaggle submission page / leaderboard here]', italic=True)
 
 # ---------------------------------------------------------------- 5 discussion
@@ -382,8 +422,11 @@ B(['conda create -n dsde python=3.12; pip install torch==2.8.0 torchvision==0.23
    'kaggle competitions download -c 2110531-dsde-2026-1 -p data/raw, then unzip into data/raw',
    'Open vehicle_detection.ipynb from the midterm/ folder and run all cells. The settings are in the Config cell '
    '(or set environment variables, e.g. MODEL, IMGSZ, EPOCHS, FULL_TRAIN=1).',
-   'To reproduce the submission without training: SKIP_TRAIN=1 WEIGHTS=<path to submitted .pt> (and the same '
-   'IMGSZ / TTA as in the submission .json file).'])
+   'YOLO26s submission without training: SKIP_TRAIN=1 WEIGHTS=<submitted .pt> (and the same IMGSZ / TTA as in the '
+   'submission .json file).',
+   'Final YOLO26m ensemble: run cv_kfold_kaggle.ipynb on a Kaggle Notebook (GPU T4 x2, attach the competition data) '
+   'or locally. To reproduce without training, copy weights/yolo26m_960_cv_fold{k}.pt to cv_out/fold{k}/best.pt; '
+   'the notebook then only predicts and writes cv_out/yolo26m_960_cv5fold_wbf.csv (PRED_BATCH=8 on a 4 GB GPU).'])
 
 out = ROOT / 'report' / 'midterm_report.docx'
 doc.save(out)

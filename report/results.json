@@ -83,7 +83,7 @@
       "0.33%"
     ]
   },
-  "best": "yolo26s_960_tta",
+  "best": "yolo26m_960_cv5fold_wbf",
   "experiments": {
     "yolo26s_640": {
       "desc": "YOLO26s, imgsz 640, batch 8, RFS; 100 ep max, early-stopped at 60 (best ep 30)",
@@ -169,11 +169,30 @@
       "max_det": 100,
       "val_map50": null,
       "kaggle_public": 0.54814
+    },
+    "yolo26m_960_cv5fold_wbf": {
+      "desc": "final: YOLO26m 960, camera 5-fold CV, TTA, WBF of 5 fold models",
+      "imgsz": 960,
+      "epochs": 30,
+      "batch": 16,
+      "max_det": 300,
+      "val_map50": 0.4756,
+      "kaggle_public": 0.60457,
+      "val_ap": {
+        "Car": 0.8658,
+        "Motorcycle": 0.6942,
+        "Bus": 0.6751,
+        "Truck": 0.4956,
+        "Tuktuk": 0.4833,
+        "Van": 0.3003,
+        "Pickup": 0.2899,
+        "Songthaew": 0.0006
+      }
     }
   },
   "final": {
-    "file": "submissions/yolo26s_960_full_tta.csv",
-    "kaggle_public": 0.54814
+    "file": "submissions/yolo26m_960_cv5fold_wbf.csv",
+    "kaggle_public": 0.60457
   },
   "figs": {
     "per_class": "yolo26s_960_tta_per_class.png",
@@ -183,7 +202,7 @@
     "test": "yolo26s_960_test_pred.png"
   },
   "discussion": {
-    "5.1 Error analysis by class": [
+    "5.1 Error analysis by class (YOLO26s, 4 validation cameras)": [
       "**Car (0.90) and Motorcycle (0.80)** are detected well: they are frequent and look distinctive.",
       "**Van (0.34), Pickup (0.32) and Songthaew (0.11)** are the main weakness. The confusion matrix shows that 44% of Vans and 51% of Pickups are predicted as Car, and 33% of Songthaews as Truck. At 15-25 px these vehicles differ only by a few pixels (roof shape, open cargo bed, rear bench).",
       "**Label noise** makes this harder: the crops in Chapter 2 contain SUVs labelled as Van and vans labelled as Truck, and 280 vehicles carry two boxes with different classes (mostly Car + Truck). One of the two boxes can never be matched by a single prediction, which caps the achievable AP.",
@@ -197,25 +216,33 @@
       "Validation vs leaderboard: the same model scored 0.525 on the held-out cameras and 0.516 on the public test set, so the camera-held-out split predicts the leaderboard well; a random split would have been over-optimistic."
     ],
     "5.3 What helped": [
-      "Camera-held-out validation: gives an honest estimate for unseen cameras (a random split would mix near-identical frames of the same camera).",
-      "Higher input resolution (640 -> 960): +0.029 mAP, mainly Truck (+0.10) and Tuktuk (+0.05).",
-      "Test-time augmentation: +0.025 at 640 and +0.029 at 960; it helps the rare classes most (Van, Pickup, Bus).",
-      "Very low confidence threshold (0.001) so that the precision-recall curve is complete. Keeping 300 instead of 100 boxes per image changed the score by only +0.001.",
-      "Training the final model on all 15 cameras: public 0.516 -> 0.548 (more viewpoints to generalise from)."
+      "Camera-held-out validation: an honest estimate for unseen cameras (validation 0.525 vs public 0.516 for the same model).",
+      "Higher input resolution (640 -> 960): +0.029 mAP on validation, mainly Truck and Tuktuk.",
+      "Test-time augmentation: +0.025 at 640 and +0.029 at 960; helps the rare classes most.",
+      "Training on all cameras: YOLO26s public 0.516 (11 cams) -> 0.548 (15 cams).",
+      "Larger model + camera 5-fold CV + WBF ensemble (YOLO26m): public 0.548 -> 0.605 (+0.057). On the same four unseen cameras YOLO26m alone improves 0.525 -> 0.532; the rest of the gain comes from averaging five models, each trained on a different 12-camera subset and early-stopped on its own unseen cameras.",
+      "Very low confidence threshold (0.001) so the precision-recall curve is complete; keeping 300 instead of 100 boxes per image changed the score by only +0.001."
     ],
     "5.4 How to improve": [
-      "Larger backbones (YOLO26m/l, RT-DETR) and imgsz 1280 on a bigger GPU (Colab / Kaggle); only a 4 GB GPU was available here.",
+      "Even larger models (YOLO26l/x, RT-DETR) and imgsz 1280, and more ensemble members (several seeds per fold); YOLO26m at 960 already filled the free Kaggle session budget.",
+      "Songthaew: copy-paste augmentation of Songthaew crops from camera 1426 into other cameras, so that the model does not tie the class to one viewpoint.",
       "A second-stage classifier (or a VLM) that re-classifies crops of the confusable classes Car / Van / Pickup / Truck / Songthaew at higher resolution, emitting the alternative classes with lower scores.",
       "Ensembling several models / resolutions with Weighted Boxes Fusion.",
       "Semi-supervised domain adaptation: pseudo-label the unlabelled test cameras with high-confidence predictions and fine-tune.",
       "Copy-paste augmentation of rare vehicles into other cameras, and relabelling the noisy Van / Truck / duplicate boxes.",
       "Cross-validation over several camera folds to choose hyper-parameters more reliably than a single 4-camera split."
+    ],
+    "5.5 Lessons from cross-validation": [
+      "Songthaew generalises across cameras only if camera 1426 is in the training set: in the fold that validates on 1426 the model has only 26 Songthaew boxes, and the OOF AP of Songthaew is 0.001. The OOF mAP over 15 cameras (0.476) is therefore a pessimistic estimate; for the test set, 4 of the 5 ensemble models have seen camera 1426.",
+      "Validation mAP varies strongly between folds (0.43 to 0.71): the difficulty depends on the viewpoint, which confirms that a single 4-camera split is noisy and that K-fold CV gives a more reliable model selection.",
+      "Early stopping per fold chose epochs 15-24, so a fixed number of epochs would be sub-optimal for some camera subsets.",
+      "Reproducibility: StratifiedGroupKFold returned a different camera assignment on the Kaggle image than locally (different scikit-learn version); the folds of the submitted run are therefore fixed in the notebook."
     ]
   },
   "conclusion": [
-    "A YOLO26s detector pretrained on COCO was fine-tuned to detect eight vehicle classes in low-resolution Bangkok CCTV images. The EDA showed that the test cameras never appear in training, the objects are tiny and the classes are strongly imbalanced; the pipeline was designed around these facts with a camera-held-out validation split, repeat-factor sampling of rare classes, upscaled training (imgsz 960) and test-time augmentation.",
-    "On four held-out cameras the model reaches mAP@50 = 0.525 (Car 0.90, Motorcycle 0.80, Bus 0.70), up from 0.467 for the 640 baseline. The final model, retrained on all 15 cameras with the same settings, scores 0.548 on the public leaderboard. The remaining errors come mostly from fine-grained confusion between Car, Van, Pickup, Truck and Songthaew and from viewpoint changes between cameras, which a second-stage classifier, larger models and domain adaptation could address.",
-    "The whole pipeline is reproducible from a single notebook with fixed seeds, pinned package versions and the submitted weights."
+    "A YOLO26 detector pretrained on COCO was fine-tuned to detect eight vehicle classes in low-resolution Bangkok CCTV images. The EDA showed that the test cameras never appear in training, that frames of one camera are near-duplicates, that the objects are tiny and that the classes are strongly imbalanced. The pipeline was designed around these facts: camera-held-out validation, repeat-factor sampling for rare classes, upscaled training (imgsz 960) and test-time augmentation.",
+    "With YOLO26s on the local GPU the best single model reached 0.525 on four held-out cameras and 0.548 on the public leaderboard. The final solution trains YOLO26m with camera 5-fold cross-validation on Kaggle GPUs and fuses the five fold models with Weighted Boxes Fusion; it scores **0.605 mAP@50** on the public leaderboard. The remaining errors are mostly fine-grained confusion between Car, Van, Pickup, Truck and Songthaew, and viewpoint changes between cameras.",
+    "Everything is reproducible from the two notebooks with fixed seeds, fixed folds, pinned package versions and the submitted weights."
   ],
   "postproc": "max_det 300 instead of 100: +0.0006 (640) / +0.0011 (960, TTA) - negligible",
   "eda_stats": {
@@ -299,23 +326,28 @@
   "kaggle_history": [
     [
       "yolo26s_960_full_tta.csv",
-      "long ids from sample_submission.csv",
+      "YOLO26s 15 cams; long ids from sample_submission",
       "0.00000"
     ],
     [
       "yolo26s_960_tta.csv",
-      "long ids from sample_submission.csv",
+      "YOLO26s 11 cams; long ids from sample_submission",
       "0.00000"
     ],
     [
       "yolo26s_960_tta.csv (re-submitted)",
-      "test file name, e.g. 1068_20260825_060110.jpg",
+      "YOLO26s 11 cams; test file names",
       "0.51648"
     ],
     [
-      "yolo26s_960_full_tta.csv (final)",
-      "test file name, all 1,013 images",
+      "yolo26s_960_full_tta.csv",
+      "YOLO26s 15 cams; test file names, 1,013 images",
       "0.54814"
+    ],
+    [
+      "yolo26m_960_cv5fold_wbf.csv (final)",
+      "YOLO26m 5-fold CV + TTA + WBF ensemble",
+      "0.60457"
     ]
   ]
 }

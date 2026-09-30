@@ -37,16 +37,30 @@ SKIP_TRAIN=1 WEIGHTS=weights/yolo26s_960_full.pt IMGSZ=960 TTA=1 RUN_NAME=repro 
 | yolo26s, 640 + TTA | 0.4919 | – |
 | yolo26s, 960 | 0.4958 | – |
 | yolo26s, 960 + TTA | 0.5247 | 0.51648 |
-| **yolo26s, 960, all 15 cams, 25 ep + TTA (final)** | – (no held-out val) | **0.54814** |
+| yolo26s, 960, all 15 cams, 25 ep + TTA | – (no held-out val) | 0.54814 |
+| **yolo26m, 960, camera 5-fold CV + TTA + WBF of the 5 fold models (final)** | OOF 0.4756 (15 cams) / 0.5317 (same 4 cams) | **0.60457** |
 
 **Submission `image_id` must be the test file name** (`1068_20260825_060110.jpg`), not the long id in
 `sample_submission.csv` — the long ids scored 0.000.
 
 `experiments/postproc_eval.py` compares MAX_DET 100/300 and TTA on the val cameras.
 
+## Final model: camera 5-fold CV on Kaggle (`cv_kfold_kaggle.ipynb`)
+* 5 folds × 3 cameras (`StratifiedGroupKFold`, group = camera; folds fixed in the notebook), YOLO26m, imgsz 960,
+  30 epochs max / patience 10 per fold, TTA, Weighted Boxes Fusion of the 5 fold models.
+* Ran on a Kaggle Notebook with 2 × T4 (≈ 8 h). Kaggle notebook: `kaggle_kernel/` (`kaggle kernels push -p kaggle_kernel --accelerator NvidiaTeslaT4`);
+  it needs the private datasets `chinnakrit/dsde-midterm-offline-pkgs` (wheels + yolo26m.pt, no internet needed) and
+  `chinnakrit/dsde-midterm-data` (competition zip). Outputs of the submitted run: `experiments/kaggle_cv_run/cv_out/`
+  (metrics, curves, val/test predictions; weights in `weights/yolo26m_960_cv_fold{0..4}.pt`).
+* Reproduce the submission without training: copy `weights/yolo26m_960_cv_fold{k}.pt` to `cv_out/fold{k}/best.pt` and run
+  the notebook (`PRED_BATCH=8` on a 4 GB GPU) → `cv_out/yolo26m_960_cv5fold_wbf.csv`.
+* `experiments/cv_analysis.py` → CV figures / numbers for the report.
+
 ## Folder layout
 ```
-vehicle_detection.ipynb   main pipeline (EDA, cleaning, split, train, eval, visualise, submit)
+vehicle_detection.ipynb   main pipeline (EDA, cleaning, split, YOLO26s train, eval, visualise, submit)
+cv_kfold_kaggle.ipynb     final model: YOLO26m camera 5-fold CV + WBF ensemble (Kaggle GPU)
+kaggle_kernel/            Kaggle kernel metadata + notebook copy
 requirements.txt
 experiments/              executed notebooks + logs of every run, postproc_eval.py
 submissions/              submission CSVs + JSON with settings/val score
@@ -59,5 +73,5 @@ runs/                     Ultralytics runs, weights (not in git -> upload to Goo
 
 ## Submit (max 5 / day)
 ```bash
-kaggle competitions submit -c 2110531-dsde-2026-1 -f submissions/yolo26s_960_full_tta.csv -m "yolo26s 960 full-data + TTA"
+kaggle competitions submit -c 2110531-dsde-2026-1 -f submissions/yolo26m_960_cv5fold_wbf.csv -m "yolo26m 5-fold WBF"
 ```

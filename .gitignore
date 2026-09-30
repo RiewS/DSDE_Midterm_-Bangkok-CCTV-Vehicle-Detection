@@ -4,3 +4,4 @@ runs/
 *.cache
 smoke_run.ipynb
 cv_out/
+package/

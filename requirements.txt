@@ -12,3 +12,5 @@ pillow
 tqdm
 kaggle>=1.8.0
 jupyter
+scikit-learn          # StratifiedGroupKFold (cv_kfold_kaggle.ipynb)
+ensemble-boxes        # Weighted Boxes Fusion (cv_kfold_kaggle.ipynb)

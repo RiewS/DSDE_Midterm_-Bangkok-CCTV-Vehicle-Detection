@@ -1,0 +1,14 @@
+install ok
+/kaggle/input: ['dsde-midterm-data', 'dsde-midterm-offline-pkgs'] []
+/kaggle/input/dsde-midterm-offline-pkgs: [] ['ensemble_boxes-1.0.9-py3-none-any.whl', 'yolo26m.pt', 'Arial.ttf', 'polars-1.44.2-py3-none-any.whl', 'ultralytics-8.4.163-py3-none-any.whl', 'ultralytics_platform-0.1.65-py3-none-any.whl', 'nvidia_ml_py-13.615.71-py3-none-any.whl', 'polars_runtime_32-1.44.2-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', 'ultralytics_thop-2.2.1-py3-none-any.whl', 'yolo26n.pt']
+/kaggle/input/dsde-midterm-data: ['test', 'train'] ['sample_submission.csv', 'train.csv']
+/kaggle/input/dsde-midterm-data/test: ['test'] []
+/kaggle/input/dsde-midterm-data/test/test: [] []
+/kaggle/input/dsde-midterm-data/train: ['train'] []
+/kaggle/input/dsde-midterm-data/train/train: [] []
+paths /kaggle/input/dsde-midterm-data /kaggle/input/dsde-midterm-data/train/train
+{"fold": 0, "val_cams": ["1426", "1427", "172"], "val_map50": 0.4297, "val_ap": {"Car": 0.8744, "Motorcycle": 0.7439, "Bus": 0.4267, "Truck": 0.4801, "Tuktuk": 0.5189, "Van": 0.1757, "Pickup": 0.2083, "Songthaew": 0.0092}, "hours": 0.95, "model": "yolo26m.pt", "imgsz": 960, "epochs": 30, "tta": true, "gpus": 2}
+{"fold": 1, "val_cams": ["1066", "182", "222"], "val_map50": 0.5198, "val_ap": {"Car": 0.8503, "Motorcycle": 0.7899, "Bus": 0.7184, "Truck": 0.5864, "Tuktuk": 0.4889, "Van": 0.4668, "Pickup": 0.2542, "Songthaew": 0.0036}, "hours": 1.84, "model": "yolo26m.pt", "imgsz": 960, "epochs": 30, "tta": true, "gpus": 2}
+{"fold": 2, "val_cams": ["229", "232", "244"], "val_map50": 0.5025, "val_ap": {"Car": 0.8685, "Motorcycle": 0.7971, "Bus": 0.6135, "Truck": 0.5126, "Tuktuk": 0.4535, "Van": 0.3507, "Pickup": 0.4242, "Songthaew": 0.0}, "hours": 1.56, "model": "yolo26m.pt", "imgsz": 960, "epochs": 30, "tta": true, "gpus": 2}
+{"fold": 3, "val_cams": ["1407", "1437", "180"], "val_map50": 0.7089, "val_ap": {"Car": 0.8947, "Motorcycle": 0.8483, "Bus": 0.7917, "Truck": 0.5605, "Tuktuk": 0.8357, "Van": 0.5005, "Pickup": 0.5307, "Songthaew": null}, "hours": 1.85, "model": "yolo26m.pt", "imgsz": 960, "epochs": 30, "tta": true, "gpus": 2}
+{"fold": 4, "val_cams": ["12", "214", "231"], "val_map50": 0.5449, "val_ap": {"Car": 0.8638, "Motorcycle": 0.4989, "Bus": 0.694, "Truck": 0.4528, "Tuktuk": 0.4764, "Van": 0.2901, "Pickup": 0.5385, "Songthaew": null}, "hours": 1.78, "model": "yolo26m.pt", "imgsz": 960, "epochs": 30, "tta": true, "gpus": 2}
