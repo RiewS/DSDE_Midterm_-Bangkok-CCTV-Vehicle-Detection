@@ -422,8 +422,10 @@ FIGURE('cv_per_class.png', 'Per-class AP@50: YOLO26s vs YOLO26m on unseen camera
 P(f"On the same four cameras YOLO26m is better for 6 of 8 classes (e.g. Van {CVR['old4_s_ap']['Van']:.2f} -> "
   f"{CVR['old4_m_ap']['Van']:.2f}, Car {CVR['old4_s_ap']['Car']:.2f} -> {CVR['old4_m_ap']['Car']:.2f}). "
   f"The OOF score over all 15 cameras ({CVR['oof_map50']:.3f}) is lower mainly because of Songthaew "
-  f"(AP {CVR['oof_ap']['Songthaew']:.3f}): 91 of its 117 boxes come from camera 1426, so the fold that validates on 1426 "
-  'has almost no Songthaew to learn from (see Chapter 5). In the test ensemble, 4 of the 5 models have seen camera 1426.')
+  f"(AP {CVR['oof_ap']['Songthaew']:.3f}). 91 of its 117 boxes come from camera 1426. In fold 0 (1426 in validation) "
+  'only 26 Songthaew boxes are left for training; but even in fold 1, where 1426 is in the training set, Songthaew on '
+  'camera 1066 is not detected (AP 0.004, 13 boxes). The model ties Songthaew to the close-up view of camera 1426 and '
+  'does not transfer it to other cameras (see Chapter 5).')
 FIGURE('cv_fold1_confusion.png', 'YOLO26m fold 1: normalised confusion matrix on its validation cameras (1066, 182, 222)', width=13)
 FIGURE('cv_ensemble_test_pred.png', 'WBF ensemble predictions (confidence > 0.3) on the unseen test cameras')
 

@@ -235,7 +235,7 @@
       "Cross-validation over several camera folds to choose hyper-parameters more reliably than a single 4-camera split."
     ],
     "5.5 Lessons from cross-validation": [
-      "Songthaew generalises across cameras only if camera 1426 is in the training set: in the fold that validates on 1426 the model has only 26 Songthaew boxes, and the OOF AP of Songthaew is 0.001. The OOF mAP over 15 cameras (0.476) is therefore a pessimistic estimate; for the test set, 4 of the 5 ensemble models have seen camera 1426.",
+      "Songthaew does not generalise across cameras. 91 of its 117 boxes come from camera 1426 (close-up view). In fold 0 (1426 in validation) only 26 Songthaew boxes remain for training (AP 0.009); in fold 1, where 1426 is in the training set, the 13 Songthaews of camera 1066 are still not detected (AP 0.004); folds 3-4 have no Songthaew in validation. The OOF AP of Songthaew is therefore ~0 and the OOF mAP over 15 cameras (0.476) is pessimistic. Remedy: show Songthaew in other camera views (copy-paste augmentation).",
       "Validation mAP varies strongly between folds (0.43 to 0.71): the difficulty depends on the viewpoint, which confirms that a single 4-camera split is noisy and that K-fold CV gives a more reliable model selection.",
       "Early stopping per fold chose epochs 15-24, so a fixed number of epochs would be sub-optimal for some camera subsets.",
       "Reproducibility: StratifiedGroupKFold returned a different camera assignment on the Kaggle image than locally (different scikit-learn version); the folds of the submitted run are therefore fixed in the notebook."
