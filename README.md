@@ -55,6 +55,7 @@ SKIP_TRAIN=1 WEIGHTS=weights/yolo26s_960_full.pt IMGSZ=960 TTA=1 RUN_NAME=repro 
 * Reproduce the submission without training: copy `weights/yolo26m_960_cv_fold{k}.pt` to `cv_out/fold{k}/best.pt` and run
   the notebook (`PRED_BATCH=8` on a 4 GB GPU) → `cv_out/yolo26m_960_cv5fold_wbf.csv`.
 * `experiments/cv_analysis.py` → CV figures / numbers for the report.
+* `experiments/label_audit.py` → label audit: Lab5 outlier rules + OOF model-assisted check (`experiments/audit_*.csv`, report Section 2.5).
 
 ## Folder layout
 ```

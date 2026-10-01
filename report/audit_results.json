@@ -1,0 +1,107 @@
+{
+  "rule_table": [
+    [
+      "Car",
+      181,
+      3,
+      368,
+      5,
+      6
+    ],
+    [
+      "Motorcycle",
+      31,
+      5,
+      56,
+      14,
+      189
+    ],
+    [
+      "Bus",
+      6,
+      0,
+      13,
+      0,
+      0
+    ],
+    [
+      "Truck",
+      11,
+      2,
+      22,
+      4,
+      0
+    ],
+    [
+      "Tuktuk",
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      "Van",
+      0,
+      2,
+      6,
+      4,
+      0
+    ],
+    [
+      "Pickup",
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      "Songthaew",
+      3,
+      0,
+      12,
+      0,
+      0
+    ]
+  ],
+  "rule_totals": {
+    "z>3 aspect": 232,
+    "z>3 area": 13,
+    "IQR aspect": 477,
+    "IQR area": 28,
+    "side <= 2 px": 195
+  },
+  "oof": {
+    "possible_missing_labels": 674,
+    "missing_by_pred_class": {
+      "Car": 484,
+      "Motorcycle": 127,
+      "Truck": 35,
+      "Bus": 10,
+      "Tuktuk": 7,
+      "Pickup": 6,
+      "Van": 3,
+      "Songthaew": 2
+    },
+    "possible_wrong_class": 1265,
+    "wrong_pairs (label -> model)": {
+      "Truck -> Car": 269,
+      "Pickup -> Car": 202,
+      "Car -> Pickup": 103,
+      "Van -> Car": 87,
+      "Car -> Truck": 82,
+      "Car -> Van": 67,
+      "Truck -> Van": 49,
+      "Songthaew -> Truck": 49,
+      "Truck -> Bus": 45,
+      "Pickup -> Truck": 36
+    },
+    "possible_bad_boxes (no prediction)": 1744,
+    "bad_boxes_side<=2px": 62,
+    "bad_boxes_median_size": [
+      10.0,
+      14.0
+    ]
+  }
+}

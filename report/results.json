@@ -207,7 +207,8 @@
       "**Van (0.34), Pickup (0.32) and Songthaew (0.11)** are the main weakness. The confusion matrix shows that 44% of Vans and 51% of Pickups are predicted as Car, and 33% of Songthaews as Truck. At 15-25 px these vehicles differ only by a few pixels (roof shape, open cargo bed, rear bench).",
       "**Label noise** makes this harder: the crops in Chapter 2 contain SUVs labelled as Van and vans labelled as Truck, and 280 vehicles carry two boxes with different classes (mostly Car + Truck). One of the two boxes can never be matched by a single prediction, which caps the achievable AP.",
       "**Songthaew generalises poorly** because 91 of its 117 training boxes come from one camera (1426), so the model learns that camera's appearance rather than the vehicle.",
-      "**Tuktuk** is often missed completely (32% predicted as background): tuktuks are small, partially covered by motorcycles and look like a motorcycle with a roof."
+      "**Tuktuk** is often missed completely (32% predicted as background): tuktuks are small, partially covered by motorcycles and look like a motorcycle with a roof.",
+      "The label audit (Section 2.5) confirms the label noise: 674 confident model detections have no label (many are vehicles cut by the image border) and 1,265 labels disagree with a confident model class, about three quarters of them looking like real label errors in a visual check (vans labelled Truck/Bus, pickups labelled Car). These count as false positives / misses for any model and cap the achievable mAP."
     ],
     "5.2 Error analysis by condition and camera": [
       "Day vs night (960 + TTA): 0.537 vs 0.494. Headlight glare and motion blur reduce the visible shape.",
@@ -226,6 +227,7 @@
     "5.4 How to improve": [
       "Even larger models (YOLO26l/x, RT-DETR) and imgsz 1280, and more ensemble members (several seeds per fold); YOLO26m at 960 already filled the free Kaggle session budget.",
       "Songthaew: copy-paste augmentation of Songthaew crops from camera 1426 into other cameras, so that the model does not tie the class to one viewpoint.",
+      "Relabel the cases found by the OOF label audit (experiments/audit_*.csv) and retrain; or use the OOF predictions as pseudo-labels for missing border vehicles.",
       "A second-stage classifier (or a VLM) that re-classifies crops of the confusable classes Car / Van / Pickup / Truck / Songthaew at higher resolution, emitting the alternative classes with lower scores.",
       "Ensembling several models / resolutions with Weighted Boxes Fusion.",
       "Semi-supervised domain adaptation: pseudo-label the unlabelled test cameras with high-confidence predictions and fine-tune.",

@@ -268,6 +268,42 @@ P('280 pairs of boxes overlap with IoU > 0.9 but have different classes (mostly 
   'Bus vs Truck): the same vehicle was labelled twice. They were kept because the test labels probably '
   'contain the same pattern, and a model that outputs both classes at lower confidence can still match both.')
 
+AU = json.loads((ROOT / 'report' / 'audit_results.json').read_text(encoding='utf-8'))
+H('Label audit: rules (Lab5) and model-assisted check', 3)
+P('The rule-based cleaning above only removes boxes that are certainly broken. To check the remaining labels, two '
+  'audits were run (experiments/label_audit.py) and the flagged cases were inspected visually; nothing was changed '
+  'in the training data afterwards, so the submitted models stay reproducible.')
+P('**(a) Outlier rules from Lab5** (z-score > 3 and 1.5 x IQR on log aspect ratio and log area, per class):')
+TABLE(['Class', 'z>3 aspect', 'z>3 area', 'IQR aspect', 'IQR area', 'side <= 2 px'],
+      [[r[0]] + r[1:] for r in AU['rule_table']], 'Boxes flagged by the Lab5 outlier rules', widths=[2.8, 2.4, 2.2, 2.4, 2.2, 2.6])
+FIGURE('audit_zscore_aspect.png', 'Boxes with |z(log aspect)| > 3: mostly vehicles cut by the image border (valid), a few slivers (errors)')
+P('Visual inspection shows that most rule outliers are **valid**: vehicles cut by the image border (only the roof is '
+  'visible) and thin, head-on motorcycles (163 of the 172 boxes with a side <= 3 px and ratio >= 4 are Motorcycles). '
+  'Only a handful are clear annotation errors (e.g. 2 x 16 px or 7 x 1 px "Car" slivers). Removing every rule outlier, '
+  'as for the numeric features of Lab5, would therefore delete hundreds of real vehicles, which also appear in the test set.')
+o = AU['oof']
+P('**(b) Model-assisted audit.** The out-of-fold predictions of the 5-fold CV are made by models that never saw the '
+  'camera, so strong disagreements between model and label point to label problems:')
+TABLE(['Check', 'Rule', 'Flagged', 'Visual review of the top/random 24'], [
+    ['Possible missing label', 'prediction conf >= 0.7, IoU < 0.3 with every label', o['possible_missing_labels'],
+     'about 20 of 24 are real unlabelled vehicles, mostly cut by the image border or very close to the camera'],
+    ['Possible wrong class', 'best prediction (IoU >= 0.7) has another class, conf >= 0.6', o['possible_wrong_class'],
+     'about 3 of 4 look like label errors: vans labelled Truck / Bus, pickups labelled Car'],
+    ['Possible bad box', 'no prediction with IoU >= 0.3', o['possible_bad_boxes (no prediction)'],
+     'mostly correct labels of tiny, distant vehicles in dense traffic (median 10 x 14 px): a model weakness, not a label error'],
+], 'Model-assisted label audit (OOF predictions of YOLO26m)', widths=[3, 4.6, 1.6, 7.3])
+P('Most frequent class disagreements (label -> model): ' + ', '.join(f'{k} ({v})' for k, v in list(o['wrong_pairs (label -> model)'].items())[:6]) +
+  '. Part of the Truck -> Car count comes from the 212 Car/Truck double labels found in Section 2.5. '
+  'Possible missing labels touch the image border in 23% of the cases, versus 9% of all labels: vehicles that are '
+  'only partly visible were labelled inconsistently.')
+FIGURE('audit_missing.png', 'Possible missing labels: confident predictions (red) where no label exists (green = existing labels)')
+FIGURE('audit_wrong_class.png', 'Possible wrong classes: label (green) vs. confident model class')
+FIGURE('audit_bad_boxes.png', 'Labels without any prediction (random sample): mostly tiny distant vehicles')
+P('**Decision.** The labels contain noise of the same kind that the test labels probably contain (missing border '
+  'vehicles, Van / Pickup / Truck ambiguity), so the training labels were not edited for the submitted models. The '
+  'audit explains part of the remaining error (Chapter 5) and gives a concrete list for relabelling in future work '
+  '(experiments/audit_*.csv).')
+
 H('2.6 Train / validation split and dataset construction', 2)
 P(f"To mimic the unseen-camera test set and avoid the leakage shown in 2.2, **{len(RES['val_cams'])} whole cameras "
   f"({', '.join(RES['val_cams'])}) were held out for validation**. As a stratification over cameras, the notebook "
@@ -291,6 +327,8 @@ TABLE(['Finding', 'Decision'], [
     ['Car : Songthaew = 152 : 1', 'Repeat-factor sampling; per-class AP analysis'],
     ['Tiny, right-skewed box sizes', 'Upscale to imgsz 960; multi-scale detector'],
     ['Sliver boxes are label noise; duplicates', 'Remove side < 2 px and exact / near duplicates'],
+    ['Lab5 outliers are mostly valid (border-cut vehicles, thin motorcycles)', 'Do not drop rule outliers; inspect visually'],
+    ['OOF audit: missing border vehicles, Van/Pickup/Truck class noise', 'Keep labels (test has the same noise); list for relabelling'],
     ['17% night frames in both train and test', 'Report day / night mAP; HSV augmentation'],
 ], 'EDA findings and the resulting decisions', widths=[9, 7.5])
 
