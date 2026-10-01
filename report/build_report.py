@@ -368,7 +368,7 @@ TABLE(['Hyper-parameter', 'YOLO26s (experiments)', 'YOLO26m 5-fold (final)'], [
     ['Batch size', '8 (640) / 4 (960), 4 GB VRAM', '16 (8 per GPU, 2 GPUs, DDP)'],
     ['Validation', '4 held-out cameras (1066, 1427, 1437, 244)', 'StratifiedGroupKFold by camera: 5 folds x 3 cameras'],
     ['Optimizer', 'Ultralytics "auto" -> AdamW (lr 0.000833, momentum 0.9, wd 0.0005), cosine LR, warm-up 3 epochs', 'same'],
-    ['Augmentation', 'Mosaic (off for the last 10 epochs), scale 0.5, translate 0.1, flip 0.5, HSV (0.015, 0.7, 0.4), random erasing 0.4', 'same'],
+    ['Augmentation', 'Mosaic (off for the last 10 epochs), scale 0.5, translate 0.1, flip 0.5, HSV (h 0.015, s 0.7, v 0.4); applied on the fly, re-sampled every time an image is loaded (no rotation, shear, vertical flip, mixup or copy-paste)', 'same'],
     ['Class balance', 'Repeat-factor sampling (Section 2.6)', 'same'],
     ['Seed', '42, deterministic=True', 'same'],
     ['Hardware', 'RTX 3050 Ti Laptop GPU (4 GB), 32 GB RAM', 'Kaggle Notebook, 2 x NVIDIA T4 (16 GB each)'],
