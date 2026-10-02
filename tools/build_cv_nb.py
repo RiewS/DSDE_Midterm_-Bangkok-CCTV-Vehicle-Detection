@@ -217,6 +217,7 @@ RARE = [2, 4, 5, 6, 7]                       # Bus, Tuktuk, Van, Pickup, Songtha
 med_h = clean.assign(h=clean.y2 - clean.y1).groupby('class_id').h.median()
 CP_CLASS_W = {c: 1 / math.sqrt((clean.class_id == c).sum()) for c in RARE}
 MAX_UPSCALE = 1.6
+MAX_REUSE = 3                                # a source crop is pasted at most 3 times per fold
 
 def photometric(im, rng):
     im = im.astype(np.float32)
@@ -248,7 +249,7 @@ def build_copy_paste(k, n_images, rng):
             for c in RARE}
     classes = [c for c in RARE if bank[c]]
     wts = np.array([CP_CLASS_W[c] for c in classes]); wts /= wts.sum()
-    out, n_pasted = [], Counter()
+    out, n_pasted, used = [], Counter(), Counter()
     for j in range(n_images * 3):                                  # attempts
         if len(out) >= n_images:
             break
@@ -261,7 +262,7 @@ def build_copy_paste(k, n_images, rng):
             a = g.iloc[rng.integers(len(g))]                       # anchor vehicle -> local scale
             nh = (a.y2 - a.y1) * med_h[c] / med_h[a.class_id]
             # source crops from another camera that need at most 1.6x upscaling (avoid blurry, pixelated pastes)
-            srcs = [b for b in bank[c] if cam_of(b.image_id) != cam_of(t) and (b.y2 - b.y1) * MAX_UPSCALE >= nh]
+            srcs = [b for b in bank[c] if cam_of(b.image_id) != cam_of(t) and (b.y2 - b.y1) * MAX_UPSCALE >= nh and used[b.Index] < MAX_REUSE]
             if not srcs:
                 continue
             s = srcs[rng.integers(len(srcs))]
@@ -289,7 +290,7 @@ def build_copy_paste(k, n_images, rng):
                 m[e:-e or None, e:-e or None] = 1; m = cv2.GaussianBlur(m, (0, 0), e)[..., None]
                 roi = im[y1:y2, x1:x2].astype(np.float32)
                 im[y1:y2, x1:x2] = (m * patch + (1 - m) * roi).astype(np.uint8)
-                rows.append((c, x1, y1, x2, y2)); boxes = np.vstack([boxes, [x1, y1, x2, y2]])
+                rows.append((c, x1, y1, x2, y2)); boxes = np.vstack([boxes, [x1, y1, x2, y2]]); used[s.Index] += 1
                 pasted += 1; n_pasted[CLASSES[c]] += 1
                 break
         if pasted:
@@ -412,7 +413,7 @@ if fold_dirs:
     print(cv_ap)
 """)
 code(r"""
-def wbf(preds, iou_thr=0.55, skip=CONF):
+def wbf(preds, iou_thr=0.7, skip=CONF):   # 0.7 / box_and_model_avg: tuned on OOF folds 1-2 (0.55 merged boxes of the same model)
     by = [dict(tuple(p.groupby('image_id'))) for p in preds]
     rows = []
     for f in test_files:
@@ -424,7 +425,7 @@ def wbf(preds, iou_thr=0.55, skip=CONF):
             bl.append(np.clip(g[['x1', 'y1', 'x2', 'y2']].values / [W, H, W, H], 0, 1)); sl.append(g.confidence.values); ll.append(g.class_id.values)
         if not any(len(s) for s in sl):
             continue
-        b, s, l = weighted_boxes_fusion(bl, sl, ll, iou_thr=iou_thr, skip_box_thr=skip, conf_type='avg')
+        b, s, l = weighted_boxes_fusion(bl, sl, ll, iou_thr=iou_thr, skip_box_thr=skip, conf_type='box_and_model_avg')
         for (x1, y1, x2, y2), sc, lb in zip(b * [W, H, W, H], s, l):
             rows.append((f, int(lb), float(sc), x1, y1, x2, y2))
     return pd.DataFrame(rows, columns=['image_id', 'class_id', 'confidence', 'x1', 'y1', 'x2', 'y2'])

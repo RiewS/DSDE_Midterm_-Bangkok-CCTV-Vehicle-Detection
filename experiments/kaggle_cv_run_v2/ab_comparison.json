@@ -1,0 +1,110 @@
+{
+ "1": {
+  "v1": [
+   0.5198,
+   {
+    "Car": 0.85,
+    "Motorcycle": 0.79,
+    "Bus": 0.718,
+    "Truck": 0.586,
+    "Tuktuk": 0.489,
+    "Van": 0.467,
+    "Pickup": 0.254,
+    "Songthaew": 0.004
+   }
+  ],
+  "v2": [
+   0.5141,
+   {
+    "Car": 0.859,
+    "Motorcycle": 0.748,
+    "Bus": 0.688,
+    "Truck": 0.495,
+    "Tuktuk": 0.72,
+    "Van": 0.389,
+    "Pickup": 0.212,
+    "Songthaew": 0.0
+   }
+  ],
+  "v1+v2 WBF": [
+   0.5495,
+   {
+    "Car": 0.866,
+    "Motorcycle": 0.774,
+    "Bus": 0.725,
+    "Truck": 0.557,
+    "Tuktuk": 0.718,
+    "Van": 0.484,
+    "Pickup": 0.271,
+    "Songthaew": 0.0
+   }
+  ],
+  "v1 alone through WBF": [
+   0.5176,
+   {
+    "Car": 0.841,
+    "Motorcycle": 0.763,
+    "Bus": 0.705,
+    "Truck": 0.57,
+    "Tuktuk": 0.543,
+    "Van": 0.459,
+    "Pickup": 0.255,
+    "Songthaew": 0.004
+   }
+  ]
+ },
+ "2": {
+  "v1": [
+   0.5025,
+   {
+    "Car": 0.868,
+    "Motorcycle": 0.797,
+    "Bus": 0.613,
+    "Truck": 0.513,
+    "Tuktuk": 0.453,
+    "Van": 0.351,
+    "Pickup": 0.424,
+    "Songthaew": 0.0
+   }
+  ],
+  "v2": [
+   0.4778,
+   {
+    "Car": 0.856,
+    "Motorcycle": 0.852,
+    "Bus": 0.538,
+    "Truck": 0.446,
+    "Tuktuk": 0.464,
+    "Van": 0.249,
+    "Pickup": 0.418,
+    "Songthaew": 0.0
+   }
+  ],
+  "v1+v2 WBF": [
+   0.4996,
+   {
+    "Car": 0.853,
+    "Motorcycle": 0.826,
+    "Bus": 0.513,
+    "Truck": 0.48,
+    "Tuktuk": 0.502,
+    "Van": 0.334,
+    "Pickup": 0.488,
+    "Songthaew": 0.0
+   }
+  ],
+  "v1 alone through WBF": [
+   0.4753,
+   {
+    "Car": 0.85,
+    "Motorcycle": 0.8,
+    "Bus": 0.446,
+    "Truck": 0.482,
+    "Tuktuk": 0.448,
+    "Van": 0.344,
+    "Pickup": 0.432,
+    "Songthaew": 0.0
+   }
+  ]
+ }
+}

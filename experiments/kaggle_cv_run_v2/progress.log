@@ -1,0 +1,11 @@
+install ok
+/kaggle/input: ['datasets'] []
+/kaggle/input/datasets: ['chinnakrit'] []
+/kaggle/input/datasets/chinnakrit: ['dsde-midterm-data', 'dsde-midterm-offline-pkgs'] []
+/kaggle/input/datasets/chinnakrit/dsde-midterm-offline-pkgs: [] ['ensemble_boxes-1.0.9-py3-none-any.whl', 'yolo26m.pt', 'Arial.ttf', 'polars-1.44.2-py3-none-any.whl', 'ultralytics-8.4.163-py3-none-any.whl', 'ultralytics_platform-0.1.65-py3-none-any.whl', 'nvidia_ml_py-13.615.71-py3-none-any.whl', 'polars_runtime_32-1.44.2-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl', 'ultralytics_thop-2.2.1-py3-none-any.whl', 'yolo26n.pt']
+/kaggle/input/datasets/chinnakrit/dsde-midterm-data: ['test', 'train'] ['sample_submission.csv', 'train.csv']
+/kaggle/input/datasets/chinnakrit/dsde-midterm-data/test: ['test'] []
+/kaggle/input/datasets/chinnakrit/dsde-midterm-data/train: ['train'] []
+paths /kaggle/input/datasets/chinnakrit/dsde-midterm-data /kaggle/input/datasets/chinnakrit/dsde-midterm-data/train/train
+{"fold": 1, "val_cams": ["1066", "182", "222"], "val_map50": 0.5141, "val_ap": {"Car": 0.8593, "Motorcycle": 0.7484, "Bus": 0.6885, "Truck": 0.495, "Tuktuk": 0.7201, "Van": 0.3891, "Pickup": 0.2121, "Songthaew": 0.0}, "hours": 2.07, "aug_v2": true, "model": "yolo26m.pt", "imgsz": 960, "epochs": 30, "tta": true, "gpus": 2}
+{"fold": 2, "val_cams": ["229", "232", "244"], "val_map50": 0.4778, "val_ap": {"Car": 0.856, "Motorcycle": 0.8517, "Bus": 0.5381, "Truck": 0.4459, "Tuktuk": 0.464, "Van": 0.2485, "Pickup": 0.418, "Songthaew": 0.0}, "hours": 2.11, "aug_v2": true, "model": "yolo26m.pt", "imgsz": 960, "epochs": 30, "tta": true, "gpus": 2}
