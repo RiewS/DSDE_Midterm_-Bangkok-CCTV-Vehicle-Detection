@@ -170,9 +170,9 @@ B(['explore and clean the data, and build a validation scheme that reflects the 
    'same metric as Kaggle;',
    'analyse the errors and describe how the model could be improved.'])
 P('The code is in two Jupyter notebooks: vehicle_detection.ipynb (EDA, cleaning, split, YOLO26s experiments, '
-  'evaluation, visualisation, submission; local GPU) and cv_kfold_kaggle.ipynb (final YOLO26m camera 5-fold '
-  'cross-validation and ensemble; Kaggle GPU). No generative-AI / VLM API was used, so there is no API cost. '
-  'The final submission reaches **0.605 mAP@50** on the public leaderboard.')
+  'evaluation, visualisation, submission; local GPU) and cv_kfold_kaggle.ipynb / cv_kfold_kaggle_v2.ipynb (final YOLO26m '
+  'camera 5-fold cross-validation v1 / v2; Kaggle GPU), plus experiments/ensemble_wbf.py for the final 10-model ensemble. No generative-AI / VLM API was used, so there is no API cost. '
+  'The final submission (an ensemble of 10 YOLO26m models) reaches **0.630 mAP@50** on the public leaderboard.')
 
 # ---------------------------------------------------------------- 2 data
 H('Chapter 2: Data Preparation')
@@ -334,6 +334,9 @@ TABLE(['Finding', 'Decision'], [
 
 # ---------------------------------------------------------------- 3 model
 CVR = json.loads((ROOT / 'report' / 'cv_results.json').read_text(encoding='utf-8'))
+V12 = json.loads((ROOT / 'report' / 'v1_v2_oof.json').read_text(encoding='utf-8'))
+V2F = [json.loads(Path(q).read_text()) for q in sorted((ROOT / 'experiments' / 'kaggle_cv_run_v2' / 'cv_out_v2').glob('fold*/metrics.json'))]
+WBFT = pd.read_csv(ROOT / 'report' / 'wbf_tuning.csv')
 H('Chapter 3: Model')
 H('3.1 Choice of model', 2)
 P('The course slides (Week 5, Object Detection) describe the change from two-stage CNNs (Faster R-CNN) to '
@@ -341,7 +344,8 @@ P('The course slides (Week 5, Object Detection) describe the change from two-sta
   'YOLO26. The course example notebook fine-tunes YOLOv8 with Ultralytics. This work uses the newest model in '
   'that family, **YOLO26**, fine-tuned from COCO-pretrained weights. Two sizes were used: **YOLO26s** for the '
   'experiments on the local 4 GB GPU, and **YOLO26m** for the final model, trained on Kaggle GPUs with camera '
-  '5-fold cross-validation and a 5-model ensemble.')
+  '5-fold cross-validation, twice: v1 (standard augmentation) and v2 (+ cross-camera copy-paste). The final '
+  'prediction fuses the 10 fold models (v1 + v2).')
 TABLE(['Property', 'YOLO26s (experiments)', 'YOLO26m (final)'], [
     ['Framework', 'Ultralytics 8.4.163, PyTorch 2.8.0', 'Ultralytics 8.4.163, PyTorch (Kaggle image)'],
     ['Parameters', '9.95 M', '21.8 M'],
@@ -358,17 +362,17 @@ P('YOLO is a one-stage detector: a single CNN pass predicts, for every location 
   'Ultralytics documentation it also uses progressive loss balancing (ProgLoss) and small-target-aware label '
   'assignment (STAL), which suits this dataset because most vehicles are tiny.')
 P('No generative-AI / VLM API was used, so there is no API cost. Compute: the YOLO26s runs used a local laptop GPU; '
-  f"the YOLO26m cross-validation used the free Kaggle GPU quota (2 x NVIDIA T4, {sum(f['hours'] for f in CVR['folds']):.1f} GPU-session hours "
-  'for the 5 folds, including prediction).')
+  f"the YOLO26m cross-validations used the free Kaggle GPU quota (2 x NVIDIA T4): v1 {sum(f['hours'] for f in CVR['folds']):.1f} h and "
+  f"v2 {sum(f['hours'] for f in V2F):.1f} h for 5 folds each (plus a 4 h A/B test of v2 on two folds), including prediction.")
 
 H('3.2 Training setup', 2)
-TABLE(['Hyper-parameter', 'YOLO26s (experiments)', 'YOLO26m 5-fold (final)'], [
+TABLE(['Hyper-parameter', 'YOLO26s (experiments)', 'YOLO26m 5-fold (v1 and v2)'], [
     ['Input size', '640 and 960 (upscaled from 352 x 288, letterbox)', '960'],
     ['Epochs / early stopping', '100 (640) / 40 (960), patience 30, best-val checkpoint', '30 per fold, patience 10, best-val checkpoint of each fold'],
     ['Batch size', '8 (640) / 4 (960), 4 GB VRAM', '16 (8 per GPU, 2 GPUs, DDP)'],
     ['Validation', '4 held-out cameras (1066, 1427, 1437, 244)', 'StratifiedGroupKFold by camera: 5 folds x 3 cameras'],
     ['Optimizer', 'Ultralytics "auto" -> AdamW (lr 0.000833, momentum 0.9, wd 0.0005), cosine LR, warm-up 3 epochs', 'same'],
-    ['Augmentation', 'Mosaic (off for the last 10 epochs), scale 0.5, translate 0.1, flip 0.5, HSV (h 0.015, s 0.7, v 0.4); applied on the fly, re-sampled every time an image is loaded (no rotation, shear, vertical flip, mixup or copy-paste)', 'same'],
+    ['Augmentation', 'Mosaic (off for the last 10 epochs), scale 0.5, translate 0.1, flip 0.5, HSV (h 0.015, s 0.7, v 0.4); applied on the fly, re-sampled every time an image is loaded (no rotation, shear, vertical flip, mixup or copy-paste)', 'v1: same; v2: same + offline copy-paste and photometric variants (Section 3.3)'],
     ['Class balance', 'Repeat-factor sampling (Section 2.6)', 'same'],
     ['Seed', '42, deterministic=True', 'same'],
     ['Hardware', 'RTX 3050 Ti Laptop GPU (4 GB), 32 GB RAM', 'Kaggle Notebook, 2 x NVIDIA T4 (16 GB each)'],
@@ -379,17 +383,33 @@ P('**Camera K-fold cross-validation.** The single 4-camera split of Section 2.6 
   'Each fold model is trained on 12 cameras and early-stopped on its own 3 unseen cameras, so every camera is '
   'used for validation exactly once (out-of-fold score) and for training in 4 of the 5 models. The folds are '
   'fixed in the notebook because a different scikit-learn version produces a different assignment.')
-H('3.3 Inference, ensemble and post-processing', 2)
+H('3.3 v2: cross-camera copy-paste of rare classes', 2)
+P('The CV of v1 showed that rare classes do not transfer between cameras (Songthaew from camera 1426 is not '
+  'detected on camera 1066). v2 therefore adds training data built **per fold from the training cameras only**:')
+B(['**Cross-camera copy-paste:** a crop of a Bus, Tuktuk, Van, Pickup or Songthaew from one camera is pasted into an '
+   'image of a different camera, in the same lane as (or next to) an existing vehicle, scaled to that vehicle '
+   '(x the typical size ratio of the two classes), at most 1.6x upscaling, never overlapping a labelled box, with a '
+   'feathered edge; each source crop is used at most 3 times. 500 synthetic images per fold (~600 pasted vehicles).',
+   '**Photometric variants** (lower contrast, gamma, light blur, JPEG noise) for the repeat-factor copies and the '
+   'synthetic images, because the test cameras are darker and have lower contrast (Section 2.2).',
+   '8 non-motorcycle sliver boxes found by the label audit are removed.',
+   'Validation images and labels are untouched; models, folds, epochs and inference are identical to v1.'])
+FIGURE('v2_copy_paste_examples.png', 'v2 copy-paste examples (red = pasted rare vehicle)')
+P('A first A/B test of v2 on folds 1-2 (before the reuse cap was added) was kept only as evidence for the decision; '
+  'all five v2 fold models used for the submission were trained with the same final code.')
+H('3.4 Inference, ensemble and post-processing', 2)
 B(['Confidence threshold 0.001: low-confidence boxes only extend the precision-recall curve and never '
    'reduce AP, so a very low threshold gives the highest mAP.',
    'Test-time augmentation (flips + scales) for every model.',
-   '**Weighted Boxes Fusion (WBF)** of the 5 fold models: boxes of the same class from different models that overlap '
-   'with IoU > 0.55 are merged into one box whose coordinates are the confidence-weighted average; the score is '
-   'averaged over the 5 models, so a box found by only one model gets a low score. Up to 300 boxes per image are kept '
-   '(pycocotools uses at most 100 per image and class).',
+   '**Weighted Boxes Fusion (WBF)** of the fold models: boxes of the same class from different models that overlap '
+   'are merged into one box whose coordinates are the confidence-weighted average; the score is averaged over the '
+   'models, so a box found by only one model gets a low score. The first submission used IoU 0.55 / avg; tuning on the '
+   'OOF predictions of folds 1-2 showed that 0.55 also merges neighbouring boxes of the same model, so the final '
+   'setting is **IoU 0.7, conf_type box_and_model_avg** (Section 4.3). Up to 300 boxes per image are kept.',
+   '**Final ensemble:** 10 models = v1 folds 0-4 + v2 folds 0-4 (experiments/ensemble_wbf.py).',
    'Boxes are written in absolute pixel coordinates (x1, y1, x2, y2); image_id is the test file name; images without '
    'detections get no row and no dummy boxes are added (Data-page rule).'])
-H('3.4 Evaluation', 2)
+H('3.5 Evaluation', 2)
 P('Both notebooks re-implement the Kaggle metric with pycocotools (COCOeval, IoU = 0.50, area = all, maxDets = 100) '
   'on held-out cameras, using the raw labels. Ultralytics\' own mAP50 is a bit higher because it uses the cleaned labels.')
 
@@ -407,7 +427,7 @@ FIGURE(RES['figs']['curves'], 'YOLO26s 960: training curves (losses and validati
 FIGURE(RES['figs']['confusion'], 'YOLO26s 960: normalised confusion matrix on the validation cameras', width=13)
 FIGURE(RES['figs']['gt_pred'], 'YOLO26s 960: ground truth (left) vs prediction with confidence > 0.3 (right)')
 
-H('4.2 Final model: YOLO26m, camera 5-fold cross-validation', 2)
+H('4.2 YOLO26m v1: camera 5-fold cross-validation', 2)
 TABLE(['Fold', 'Validation cameras', 'Val mAP@50', 'Epochs run', 'Best epoch', 'Hours'],
       [[f['fold'], ', '.join(f['val_cams']), f"{f['val_map50']:.4f}", f['epochs_run'], f['best_epoch'], f['hours']] for f in CVR['folds']]
       + [['OOF', 'all 15 cameras (2,991 images)', f"{CVR['oof_map50']:.4f}", '', '', f"{sum(f['hours'] for f in CVR['folds']):.1f}"]],
@@ -427,22 +447,44 @@ P(f"On the same four cameras YOLO26m is better for 6 of 8 classes (e.g. Van {CVR
   'camera 1066 is not detected (AP 0.004, 13 boxes). The model ties Songthaew to the close-up view of camera 1426 and '
   'does not transfer it to other cameras (see Chapter 5).')
 FIGURE('cv_fold1_confusion.png', 'YOLO26m fold 1: normalised confusion matrix on its validation cameras (1066, 182, 222)', width=13)
-FIGURE('cv_ensemble_test_pred.png', 'WBF ensemble predictions (confidence > 0.3) on the unseen test cameras')
+H('4.3 YOLO26m v2 and the v1 + v2 ensemble', 2)
+TABLE(['Fold', 'v1', 'v2', 'v1 (WBF 0.7)', 'v1 + v2 (WBF 0.7)'],
+      [[r['fold'], f"{r['v1']:.4f}", f"{r['v2']:.4f}", f"{r['v1 via WBF0.7']:.4f}", f"{r['v1+v2 WBF0.7']:.4f}"] for r in V12['per_fold']]
+      + [['mean', f"{sum(r['v1'] for r in V12['per_fold']) / 5:.4f}", f"{sum(r['v2'] for r in V12['per_fold']) / 5:.4f}",
+          f"{sum(r['v1 via WBF0.7'] for r in V12['per_fold']) / 5:.4f}", f"{sum(r['v1+v2 WBF0.7'] for r in V12['per_fold']) / 5:.4f}"]],
+      'Validation mAP@50 per fold (each model never saw the validation cameras of its fold)', widths=[1.5, 2.6, 2.6, 3.2, 3.6], bold_rows=[5])
+TABLE(['Class', 'v1', 'v2', 'v1 + v2'],
+      [[c, f"{V12['oof_v1w']['ap'][c]:.3f}", f"{V12['oof_v2']['ap'][c]:.3f}", f"{V12['oof_v12']['ap'][c]:.3f}"] for c in CLASSES]
+      + [['OOF mAP@50', f"{V12['oof_v1w']['map50']:.4f}", f"{V12['oof_v2']['map50']:.4f}", f"{V12['oof_v12']['map50']:.4f}"]],
+      'Out-of-fold per-class AP@50 over all 15 cameras (WBF IoU 0.7)', widths=[3.5, 3, 3, 3], bold_rows=[8])
+P(f"v2 alone is on par with v1 (mean fold mAP {sum(r['v2'] for r in V12['per_fold']) / 5:.3f} vs {sum(r['v1'] for r in V12['per_fold']) / 5:.3f}): "
+  'copy-paste improves Tuktuk (0.48 -> 0.52) but slightly hurts Bus and Motorcycle, and does not fix Songthaew. '
+  f"Fusing v1 and v2, however, improves **every fold** (+0.03 on average) and the OOF mAP from {V12['oof_v1w']['map50']:.3f} "
+  f"to {V12['oof_v12']['map50']:.3f}: the two runs make different errors, so the ensemble gains on Tuktuk (0.57), Van, Pickup and Truck.")
+H('WBF parameter tuning (OOF, folds 1-2)', 3)
+g = WBFT.groupby(['iou', 'conf_type'])[['v1_only', 'v1+v2']].mean().reset_index()
+TABLE(['IoU threshold', 'conf_type', 'v1 alone', 'v1 + v2'],
+      [[r['iou'], r['conf_type'], f"{r['v1_only']:.4f}", f"{r['v1+v2']:.4f}"] for _, r in g.iterrows()],
+      'Mean mAP@50 of folds 1-2 for different WBF settings', widths=[3, 4.5, 3, 3])
+P('IoU 0.55 lowers even a single model (0.511 -> 0.496) because it merges neighbouring vehicles of the same class; '
+  'IoU 0.7 with box_and_model_avg is the best setting and was used for the final submissions.')
+FIGURE('final_ensemble_test_pred.png', 'Final v1 + v2 ensemble predictions (confidence > 0.3) on the unseen test cameras')
 
-H('4.3 Kaggle submissions', 2)
+H('4.4 Kaggle submissions', 2)
 TABLE(['Submitted file', 'Model / image_id format', 'Public mAP@50'], RES['kaggle_history'], 'Kaggle submission history', widths=[5.4, 7.6, 2.7],
       bold_rows=[len(RES['kaggle_history']) - 1])
 P('The first two submissions scored 0.000 although the model was the same: they used the long ids copied from '
   'sample_submission.csv, which do not exist in the solution file. Re-submitting the same predictions with the test '
   'file names gave 0.516, close to the validation score of the same model (0.525), which confirms that '
   'camera-held-out validation is a reliable estimate of the leaderboard. Training YOLO26s on all 15 cameras gave '
-  '0.548, and the **YOLO26m 5-fold WBF ensemble gave 0.605**.')
+  '0.548 and the YOLO26m v1 5-fold WBF ensemble 0.605. Re-fusing the same v1 predictions with the tuned WBF setting '
+  'gave 0.614 without any training, and the **v1 + v2 ensemble of 10 models gave 0.630**. The public scores follow '
+  'the OOF scores (v2 alone < v1 < v1 + v2), so the model choice was made on cross-validation, not on the leaderboard.')
 P(f"Final submission file: {final.get('file', '-')}. Public leaderboard mAP@50: {fmt(final.get('kaggle_public'))}.")
 P('**Reproducibility check.** Re-running cv_kfold_kaggle.ipynb locally (RTX 3050 Ti) with the submitted fold weights '
   'reproduced every fold score within 0.0002 of the Kaggle run (e.g. fold 1: 0.5198 on Kaggle vs 0.5200 locally) and '
   'the ensemble file differs only by floating-point noise (6,948 vs 6,949 boxes with confidence > 0.3).')
-P('Model weights: weights/yolo26m_960_cv_fold0.pt ... fold4.pt (final ensemble); weights/yolo26s_960_full.pt and '
-  'yolo26s_960.pt (YOLO26s experiments).')
+P('Model weights of the final ensemble: weights/yolo26m_960_cv_fold{0..4}.pt (v1) and weights/yolo26m_960_cv_v2_fold{0..4}.pt (v2).')
 P('[Insert screenshot of the Kaggle submission page / leaderboard here]', italic=True)
 
 # ---------------------------------------------------------------- 5 discussion
@@ -466,7 +508,10 @@ B(['conda create -n dsde python=3.12; pip install torch==2.8.0 torchvision==0.23
    'submission .json file).',
    'Final YOLO26m ensemble: run cv_kfold_kaggle.ipynb on a Kaggle Notebook (GPU T4 x2, attach the competition data) '
    'or locally. To reproduce without training, copy weights/yolo26m_960_cv_fold{k}.pt to cv_out/fold{k}/best.pt; '
-   'the notebook then only predicts and writes cv_out/yolo26m_960_cv5fold_wbf.csv (PRED_BATCH=8 on a 4 GB GPU).'])
+   'the notebook then only predicts and writes cv_out/fold{k}/test_pred.csv (PRED_BATCH=8 on a 4 GB GPU). Same for v2 '
+   '(cv_kfold_kaggle_v2.ipynb, weights/yolo26m_960_cv_v2_fold{k}.pt -> cv_out_v2/fold{k}/best.pt).',
+   'Final CSV: python experiments/ensemble_wbf.py submissions/yolo26m_960_v1v2_10models_wbf07.csv 0.7 box_and_model_avg '
+   'experiments/kaggle_cv_run/cv_out experiments/kaggle_cv_run_v2/cv_out_v2'])
 
 out = ROOT / 'report' / 'midterm_report.docx'
 doc.save(out)

@@ -38,14 +38,21 @@ SKIP_TRAIN=1 WEIGHTS=weights/yolo26s_960_full.pt IMGSZ=960 TTA=1 RUN_NAME=repro 
 | yolo26s, 960 | 0.4958 | – |
 | yolo26s, 960 + TTA | 0.5247 | 0.51648 |
 | yolo26s, 960, all 15 cams, 25 ep + TTA | – (no held-out val) | 0.54814 |
-| **yolo26m, 960, camera 5-fold CV + TTA + WBF of the 5 fold models (final)** | OOF 0.4756 (15 cams) / 0.5317 (same 4 cams) | **0.60457** |
+| yolo26m v1, 960, camera 5-fold CV + TTA + WBF 0.55 | OOF 0.4756 (15 cams) | 0.60457 |
+| yolo26m v1, same predictions, WBF 0.7 / box_and_model_avg | OOF 0.4758 | 0.61367 |
+| yolo26m v2 (copy-paste aug), 5 folds, WBF 0.7 | OOF 0.4662 | 0.60237 |
+| **final: v1 + v2, 10 fold models, WBF 0.7** | **OOF 0.5035** | **0.62963** |
+
+Final CSV: `submissions/yolo26m_960_v1v2_10models_wbf07.csv` =
+`python experiments/ensemble_wbf.py <out.csv> 0.7 box_and_model_avg experiments/kaggle_cv_run/cv_out experiments/kaggle_cv_run_v2/cv_out_v2`.
+See `SUBMISSION_PACKAGE.md` for the full list of submitted items.
 
 **Submission `image_id` must be the test file name** (`1068_20260825_060110.jpg`), not the long id in
 `sample_submission.csv` — the long ids scored 0.000.
 
 `experiments/postproc_eval.py` compares MAX_DET 100/300 and TTA on the val cameras.
 
-## Final model: camera 5-fold CV on Kaggle (`cv_kfold_kaggle.ipynb`)
+## YOLO26m camera 5-fold CV on Kaggle (`cv_kfold_kaggle.ipynb` = v1, `cv_kfold_kaggle_v2.ipynb` = v2)
 * 5 folds × 3 cameras (`StratifiedGroupKFold`, group = camera; folds fixed in the notebook), YOLO26m, imgsz 960,
   30 epochs max / patience 10 per fold, TTA, Weighted Boxes Fusion of the 5 fold models.
 * Ran on a Kaggle Notebook with 2 × T4 (≈ 8 h). Kaggle notebook: `kaggle_kernel/` (`kaggle kernels push -p kaggle_kernel --accelerator NvidiaTeslaT4`);
@@ -54,14 +61,19 @@ SKIP_TRAIN=1 WEIGHTS=weights/yolo26s_960_full.pt IMGSZ=960 TTA=1 RUN_NAME=repro 
   (metrics, curves, val/test predictions; weights in `weights/yolo26m_960_cv_fold{0..4}.pt`).
 * Reproduce the submission without training: copy `weights/yolo26m_960_cv_fold{k}.pt` to `cv_out/fold{k}/best.pt` and run
   the notebook (`PRED_BATCH=8` on a 4 GB GPU) → `cv_out/yolo26m_960_cv5fold_wbf.csv`.
+* v2 = v1 + cross-camera copy-paste of Bus/Tuktuk/Van/Pickup/Songthaew (500 images per fold, built from training cameras only,
+  each crop used at most 3 times) + photometric variants (contrast, gamma, blur, JPEG); outputs in `experiments/kaggle_cv_run_v2/`
+  (folds 0,3,4 = kernel version 2, folds 1,2 = version 3, same code). `experiments/kaggle_cv_run_v2_ab/` = superseded A/B test.
 * `experiments/cv_analysis.py` → CV figures / numbers for the report.
 * `experiments/label_audit.py` → label audit: Lab5 outlier rules + OOF model-assisted check (`experiments/audit_*.csv`, report Section 2.5).
 
 ## Folder layout
 ```
 vehicle_detection.ipynb   main pipeline (EDA, cleaning, split, YOLO26s train, eval, visualise, submit)
-cv_kfold_kaggle.ipynb     final model: YOLO26m camera 5-fold CV + WBF ensemble (Kaggle GPU)
-kaggle_kernel/            Kaggle kernel metadata + notebook copy
+cv_kfold_kaggle.ipynb     YOLO26m camera 5-fold CV, v1 (Kaggle GPU)        kaggle_kernel/     Kaggle kernel of v1
+cv_kfold_kaggle_v2.ipynb  YOLO26m camera 5-fold CV, v2 (+ copy-paste)      kaggle_kernel_v2/  Kaggle kernel of v2
+tools/                    scripts that generate the two CV notebooks
+weights/                  all model weights (not in git -> Google Drive zips)
 requirements.txt
 experiments/              executed notebooks + logs of every run, postproc_eval.py
 submissions/              submission CSVs + JSON with settings/val score
@@ -74,5 +86,5 @@ runs/                     Ultralytics runs, weights (not in git -> upload to Goo
 
 ## Submit (max 5 / day)
 ```bash
-kaggle competitions submit -c 2110531-dsde-2026-1 -f submissions/yolo26m_960_cv5fold_wbf.csv -m "yolo26m 5-fold WBF"
+kaggle competitions submit -c 2110531-dsde-2026-1 -f submissions/yolo26m_960_v1v2_10models_wbf07.csv -m "v1+v2 10-model WBF"
 ```
