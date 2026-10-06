@@ -150,8 +150,8 @@ P(f"Name: {RES['student']['name']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
 P(f"Student ID: {RES['student']['id']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
 P(f"Kaggle username: {RES['student']['kaggle']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
 doc.add_paragraph()
-P(f"Source code / data / weights: {RES['links']['code']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
-P(f"Model weights (Google Drive): {RES['links']['weights']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
+P(f"Source code, CSVs, experiment outputs (GitHub): {RES['links']['code']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
+P(f"Model weights and prepared data (Google Drive): {RES['links']['weights']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
 page_break()
 
 # ---------------------------------------------------------------- 1 introduction
@@ -485,7 +485,7 @@ P('**Reproducibility check.** Re-running cv_kfold_kaggle.ipynb locally (RTX 3050
   'reproduced every fold score within 0.0002 of the Kaggle run (e.g. fold 1: 0.5198 on Kaggle vs 0.5200 locally) and '
   'the ensemble file differs only by floating-point noise (6,948 vs 6,949 boxes with confidence > 0.3).')
 P('Model weights of the final ensemble: weights/yolo26m_960_cv_fold{0..4}.pt (v1) and weights/yolo26m_960_cv_v2_fold{0..4}.pt (v2).')
-P('[Insert screenshot of the Kaggle submission page / leaderboard here]', italic=True)
+FIGURE('kaggle_submissions_screenshot.png', 'Kaggle submission page (06/10/2026): the two selected final submissions are v1 + v2 (0.62963) and v1 with tuned WBF (0.61367)')
 
 # ---------------------------------------------------------------- 5 discussion
 H('Chapter 5: Discussion')

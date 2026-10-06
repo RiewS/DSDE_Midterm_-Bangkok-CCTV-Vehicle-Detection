@@ -8,7 +8,7 @@ Chinnakrit Ongsritrakul (6870061721) · Kaggle team `6870061721_Chinnakrit`
 The exam asks for **Part 1: (1) source code, (2) uploaded csv (result), (3) prepared data, (4) model weights** and
 **Part 2: report (Word & PDF)**. The result must be reproducible by the submitted code and close to the Kaggle score.
 
-* GitHub (code, CSVs, report, experiment outputs): `<GitHub link>`
+* GitHub (code, CSVs, report, experiment outputs): https://github.com/RiewS/DSDE_Midterm_-Bangkok-CCTV-Vehicle-Detection
 * Google Drive (weights, prepared data, source-code zip): `<Google Drive link>`
 
 ## Part 1

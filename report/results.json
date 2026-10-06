@@ -2,10 +2,10 @@
   "student": {
     "name": "Chinnakrit Ongsritrakul",
     "id": "6870061721",
-    "kaggle": "6870061721_Chinnakrit (team name)"
+    "kaggle": "6870061721_Chinnakrit"
   },
   "links": {
-    "code": "<GitHub / Google Drive link>",
+    "code": "https://github.com/RiewS/DSDE_Midterm_-Bangkok-CCTV-Vehicle-Detection",
     "weights": "<Google Drive link>"
   },
   "val_cams": [
