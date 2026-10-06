@@ -6,7 +6,7 @@
   },
   "links": {
     "code": "https://github.com/RiewS/DSDE_Midterm_-Bangkok-CCTV-Vehicle-Detection",
-    "weights": "<Google Drive link>"
+    "weights": "https://drive.google.com/drive/folders/1GRVUXW7TVY-UEdtU6YXJQjZXHYEoEVE5?usp=sharing"
   },
   "val_cams": [
     "1066",

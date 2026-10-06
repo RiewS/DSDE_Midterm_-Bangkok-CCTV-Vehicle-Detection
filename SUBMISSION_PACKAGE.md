@@ -9,7 +9,7 @@ The exam asks for **Part 1: (1) source code, (2) uploaded csv (result), (3) prep
 **Part 2: report (Word & PDF)**. The result must be reproducible by the submitted code and close to the Kaggle score.
 
 * GitHub (code, CSVs, report, experiment outputs): https://github.com/RiewS/DSDE_Midterm_-Bangkok-CCTV-Vehicle-Detection
-* Google Drive (weights, prepared data, source-code zip): `<Google Drive link>`
+* Google Drive (weights, prepared data, source-code zip): https://drive.google.com/drive/folders/1GRVUXW7TVY-UEdtU6YXJQjZXHYEoEVE5?usp=sharing
 
 ## Part 1
 
