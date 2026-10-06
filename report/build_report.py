@@ -150,8 +150,10 @@ P(f"Name: {RES['student']['name']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
 P(f"Student ID: {RES['student']['id']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
 P(f"Kaggle username: {RES['student']['kaggle']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=12)
 doc.add_paragraph()
-P(f"Source code, CSVs, experiment outputs (GitHub): {RES['links']['code']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
-P(f"Model weights and prepared data (Google Drive): {RES['links']['weights']}", align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
+P('Source code, CSVs and experiment outputs (GitHub):', align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
+P(RES['links']['code'], align=WD_ALIGN_PARAGRAPH.CENTER, size=8.5)
+P('Model weights and prepared data (Google Drive):', align=WD_ALIGN_PARAGRAPH.CENTER, size=10)
+P(RES['links']['weights'], align=WD_ALIGN_PARAGRAPH.CENTER, size=8.5)
 page_break()
 
 # ---------------------------------------------------------------- 1 introduction
